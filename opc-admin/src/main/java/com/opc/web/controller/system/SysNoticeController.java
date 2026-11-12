@@ -122,7 +122,7 @@ public class SysNoticeController extends BaseController
     /**
      * 批量标记已读
      */
-    @Operation(summary = "全部标记为已读")
+    @Operation(summary = "批量标记通知公告已读")
     @PostMapping("/markReadAll")
     @ResponseBody
     public AjaxResult markReadAll(String ids)

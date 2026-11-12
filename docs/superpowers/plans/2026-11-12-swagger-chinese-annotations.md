@@ -307,7 +307,13 @@ Expected: 应用启动完成，日志包含 Spring Boot started 信息，`8080` 
 - [ ] **Step 2: 验证 OpenAPI JSON 可访问且所有操作有中文摘要**
 
 ```powershell
-$document = Invoke-RestMethod 'http://127.0.0.1:8080/v3/api-docs'
+$client = New-Object System.Net.WebClient
+$client.Encoding = [System.Text.Encoding]::UTF8
+try {
+    $document = ($client.DownloadString('http://127.0.0.1:8080/v3/api-docs') | ConvertFrom-Json)
+} finally {
+    $client.Dispose()
+}
 $missing = foreach ($path in $document.paths.PSObject.Properties) {
     foreach ($method in $path.Value.PSObject.Properties) {
         if ($method.Name -notin @('get','post','put','delete','patch')) { continue }

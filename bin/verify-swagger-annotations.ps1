@@ -33,10 +33,25 @@ function Get-AnnotationRecords([string[]]$SourceLines) {
     return $records.ToArray()
 }
 
-function Test-OnlyTrivia([string[]]$SourceLines, [int]$First, [int]$Last) {
+function Test-AnnotationGap([string[]]$SourceLines, [object[]]$Records, [int]$First, [int]$Last) {
+    $inBlockComment = $false
     for ($index = $First; $index -le $Last; $index++) {
-        if ($SourceLines[$index] -match '^\s*@' -or
-            $SourceLines[$index] -match '^\s*(//|/\*|\*|\*/)?\s*$') { continue }
+        $record = $null
+        foreach ($candidate in $Records) {
+            if ($candidate.Start -le $index -and $candidate.End -ge $index) { $record = $candidate; break }
+        }
+        if ($null -ne $record) { $index = $record.End; continue }
+
+        $line = $SourceLines[$index].Trim()
+        if ($inBlockComment) {
+            if ($line.Contains('*/')) { $inBlockComment = $false }
+            continue
+        }
+        if ($line -match '^/\*') {
+            if (-not $line.Contains('*/')) { $inBlockComment = $true }
+            continue
+        }
+        if ($line -match '^//' -or $line -match '^\*' -or $line -match '^\*/' -or [string]::IsNullOrWhiteSpace($line)) { continue }
         return $false
     }
     return $true
@@ -47,16 +62,17 @@ foreach ($file in $files) {
     $relativePath = $file.FullName.Substring((Resolve-Path (Join-Path $PSScriptRoot '..')).Path.Length).TrimStart('\', '/')
     $annotations = @(Get-AnnotationRecords $lines)
 
+    $controllerClassName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
     $classIndices = @()
     for ($i = 0; $i -lt $lines.Length; $i++) {
-        if ($lines[$i] -match '^\s*(?:(?:public|abstract|final)\s+)*class\s+') { $classIndices += $i }
+        if ($lines[$i] -match ('^\s*(?:(?:public|abstract|final)\s+)*class\s+' + [regex]::Escape($controllerClassName) + '\b')) { $classIndices += $i }
     }
     $classTagFound = $false
     foreach ($classIndex in $classIndices) {
         $preceding = @($annotations | Where-Object { $_.Name -eq 'Tag' -and $_.End -lt $classIndex } | Select-Object -Last 1)
         if ($preceding.Count -eq 0) { continue }
         $tag = $preceding[0]
-        if (-not (Test-OnlyTrivia $lines ($tag.End + 1) ($classIndex - 1))) { continue }
+        if (-not (Test-AnnotationGap $lines $annotations ($tag.End + 1) ($classIndex - 1))) { continue }
         $classTagFound = $true
         if ($tag.Text -notmatch ('name\s*=\s*"[^"]*' + $chinesePattern + '[^"]*"')) {
             $errors.Add("${relativePath}:$($tag.Start + 1): @Tag 缺少包含中文的 name")
@@ -76,11 +92,12 @@ foreach ($file in $files) {
                 $declarationType = 'class'
                 break
             }
-            if ($lines[$i] -match '^\s*(?:public|protected|private)\s+.+\(') {
+            if ($lines[$i] -match '^\s*(?:(?:public|protected|private|static|final|synchronized|abstract|native|default)\s+)*(?:<[^>]+>\s*)?[\w$][\w$<>,.?\[\] ]*\s+[\w$]+\s*\(') {
                 $nextDeclaration = $i
                 $declarationType = 'method'
                 break
             }
+            if (-not (Test-AnnotationGap $lines $annotations $i $i)) { break }
         }
         if ($declarationType -ne 'method') { continue }
 
@@ -88,9 +105,9 @@ foreach ($file in $files) {
         $blockAnnotations = @($annotations | Where-Object { $_.Start -lt $nextDeclaration })
         $mappingPosition = [array]::IndexOf($blockAnnotations, $mapping)
         $first = $mappingPosition
-        while ($first -gt 0 -and (Test-OnlyTrivia $lines ($blockAnnotations[$first - 1].End + 1) ($blockAnnotations[$first].Start - 1))) { $first-- }
+        while ($first -gt 0 -and (Test-AnnotationGap $lines $annotations ($blockAnnotations[$first - 1].End + 1) ($blockAnnotations[$first].Start - 1))) { $first-- }
         $last = $mappingPosition
-        while (($last + 1) -lt $blockAnnotations.Count -and (Test-OnlyTrivia $lines ($blockAnnotations[$last].End + 1) ($blockAnnotations[$last + 1].Start - 1))) { $last++ }
+        while (($last + 1) -lt $blockAnnotations.Count -and (Test-AnnotationGap $lines $annotations ($blockAnnotations[$last].End + 1) ($blockAnnotations[$last + 1].Start - 1))) { $last++ }
         $operation = $null
         for ($a = $first; $a -le $last; $a++) {
             if ($blockAnnotations[$a].Name -eq 'Operation') { $operation = $blockAnnotations[$a]; break }

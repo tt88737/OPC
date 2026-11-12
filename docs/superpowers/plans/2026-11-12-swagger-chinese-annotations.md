@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 为 `opc-admin` 全部 21 个 Controller 和所有 HTTP 映射方法补齐准确的 OpenAPI 3 中文分组及中文摘要，并建立自动化遗漏检查。
+**Goal:** 为全仓库 24 个实际 Web Controller 和所有 HTTP 映射方法补齐准确的 OpenAPI 3 中文分组及中文摘要，并建立自动化遗漏检查。
 
-**Architecture:** 仅在 Web Controller 层增加 `@Tag` 和 `@Operation`，不修改请求处理逻辑、权限或数据模型。先用静态覆盖脚本约束源码完整性，再通过 Maven 编译和运行中的 `/v3/api-docs` 验证 Springdoc 实际输出。
+**Architecture:** 在 Web Controller 层增加 `@Tag` 和 `@Operation`；生成器和调度模块各声明最小 Swagger 注解编译依赖，不修改请求处理逻辑、权限或数据模型。先用静态覆盖脚本约束源码完整性，再通过 Maven 编译和运行中的 `/v3/api-docs` 验证 Springdoc 实际输出。
 
-**Tech Stack:** Java 17、Spring Boot 4.1.2、Springdoc OpenAPI 3.2.0、Swagger UI 5.34.1、Maven、PowerShell 7/Windows PowerShell
+**Tech Stack:** Java 17、Spring Boot 4.1.2、Springdoc OpenAPI 3.2.0、Swagger annotations Jakarta 2.2.55、Swagger UI 5.34.1、Maven、PowerShell 7/Windows PowerShell
 
 ---
 
@@ -17,6 +17,9 @@
 - 修改 `opc-admin/src/main/java/com/opc/web/controller/system/*.java`：认证、入口和系统管理文档。
 - 修改 `opc-admin/src/main/java/com/opc/web/controller/monitor/*.java`：系统监控文档。
 - 修改 `opc-admin/src/main/java/com/opc/web/controller/tool/TestController.java`：统一示例接口分组名称。
+- 修改 `opc-generator/src/main/java/com/opc/generator/controller/GenController.java`：代码生成接口文档。
+- 修改 `opc-quartz/src/main/java/com/opc/quartz/controller/SysJobController.java` 和 `SysJobLogController.java`：定时任务与调度日志接口文档。
+- 修改根 `pom.xml`、`opc-generator/pom.xml`、`opc-quartz/pom.xml`：统一管理并声明最小 Swagger 注解编译依赖。
 
 ### Task 1: 建立 Swagger 注解覆盖检查
 
@@ -25,42 +28,9 @@
 
 - [ ] **Step 1: 创建会失败的覆盖检查脚本**
 
-脚本递归读取 `opc-admin/src/main/java/com/opc/web/controller/**/*Controller.java`，执行以下断言：
+脚本递归读取仓库各模块 `src/main/java` 下的 `*Controller.java`，只检查类上有 Spring `@RestController` 或 `@Controller` 的实际 Web Controller，执行以下断言：
 
-```powershell
-$ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$controllerRoot = Join-Path $repoRoot 'opc-admin\src\main\java\com\opc\web\controller'
-$controllerFiles = Get-ChildItem -LiteralPath $controllerRoot -Recurse -Filter '*Controller.java'
-$failures = [System.Collections.Generic.List[string]]::new()
-$chinesePattern = '[\u4e00-\u9fff]'
-
-foreach ($file in $controllerFiles) {
-    $source = [System.IO.File]::ReadAllText($file.FullName)
-    $classMatch = [regex]::Match($source, '(?s)@Tag\s*\(.*?name\s*=\s*"([^"]+)".*?\)\s*(?:@\w+(?:\([^)]*\))?\s*)*public\s+class\s+\w+Controller')
-    if (-not $classMatch.Success -or $classMatch.Groups[1].Value -notmatch $chinesePattern) {
-        $failures.Add("$($file.Name): 缺少中文 @Tag")
-    }
-
-    $lines = [System.IO.File]::ReadAllLines($file.FullName)
-    for ($index = 0; $index -lt $lines.Length; $index++) {
-        if ($lines[$index] -notmatch '@(?:Get|Post|Put|Delete|Patch|Request)Mapping\b') { continue }
-        $prefixStart = [Math]::Max(0, $index - 12)
-        $prefix = ($lines[$prefixStart..$index] -join "`n")
-        $operation = [regex]::Match($prefix, '@Operation\s*\(\s*summary\s*=\s*"([^"]+)"')
-        if (-not $operation.Success -or $operation.Groups[1].Value -notmatch $chinesePattern) {
-            $failures.Add("$($file.Name):$($index + 1) 映射缺少中文 @Operation summary")
-        }
-    }
-}
-
-if ($failures.Count -gt 0) {
-    $failures | ForEach-Object { Write-Error $_ }
-    exit 1
-}
-
-Write-Host "Swagger 注解检查通过：$($controllerFiles.Count) 个 Controller。"
-```
+以 `bin/verify-swagger-annotations.ps1` 为最终实现：遍历源码根目录并跳过 `target`，屏蔽注释后识别实际类注解，将映射注解与方法声明关联，分别验证类级中文 `@Tag(name)` 和方法级中文 `@Operation(summary)`。检查失败时输出文件、行号与缺失总数。
 
 - [ ] **Step 2: 运行检查并确认当前失败**
 
@@ -306,7 +276,7 @@ CacheController:
 
 Run: `powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-swagger-annotations.ps1`
 
-Expected: exit code `0`，输出 `Swagger 注解检查通过：21 个 Controller。`
+Expected: exit code `0`，输出 `Swagger 中文注解检查通过，共检查 24 个 Controller。`
 
 - [ ] **Step 4: 编译并提交监控接口注解**
 
@@ -355,7 +325,7 @@ Expected: 命令无异常，`$missing` 为空。
 - [ ] **Step 3: 验证中文分组完整且没有自动英文 Controller 分组**
 
 ```powershell
-$expectedTags = @('用户管理','角色管理','用户注册','个人中心','岗位管理','通知公告','菜单管理','登录认证','系统入口','字典类型管理','字典数据管理','部门管理','参数配置','在线用户','操作日志','登录日志','服务监控','缓存监控','通用文件','验证码','示例用户接口')
+$expectedTags = @('用户管理','角色管理','用户注册','个人中心','岗位管理','通知公告','菜单管理','登录认证','系统入口','字典类型管理','字典数据管理','部门管理','参数配置','在线用户','操作日志','登录日志','服务监控','缓存监控','通用文件','验证码','示例用户接口','代码生成','定时任务','调度日志')
 $actualTags = @($document.tags.name)
 $missingTags = $expectedTags | Where-Object { $_ -notin $actualTags }
 $automaticTags = $actualTags | Where-Object { $_ -match '-controller$' }
@@ -380,4 +350,35 @@ git status --short
 ```
 
 Expected: 注解检查通过、Maven `BUILD SUCCESS`；`git status` 只显示任务开始前已有的无关未跟踪文件或修改。
+
+### Task 7: 运行时发现的跨模块补充
+
+**Files:**
+- Modify: `bin/verify-swagger-annotations.ps1`
+- Modify: `opc-generator/src/main/java/com/opc/generator/controller/GenController.java`
+- Modify: `opc-quartz/src/main/java/com/opc/quartz/controller/SysJobController.java`
+- Modify: `opc-quartz/src/main/java/com/opc/quartz/controller/SysJobLogController.java`
+- Modify: `docs/superpowers/specs/2026-11-12-swagger-chinese-annotations-design.md`
+- Modify: `docs/superpowers/plans/2026-11-12-swagger-chinese-annotations.md`
+- Modify: `pom.xml`
+- Modify: `opc-generator/pom.xml`
+- Modify: `opc-quartz/pom.xml`
+
+- [ ] **Step 1: 将静态检查扩展到全仓库实际 Web Controller**
+
+扫描各模块 `src/main/java` 下的 `*Controller.java`，仅检查类上有 Spring `@RestController` 或 `@Controller` 的文件；排除 `target` 与无 Web 注解的 `BaseController`。在补注解前，检查应覆盖 24 个 Controller，并报出 29 处缺失（3 个 `@Tag`、26 个 `@Operation`）。
+
+- [ ] **Step 2: 为代码生成和定时调度接口补齐中文注解**
+
+`GenController` 的 `@Tag` 为“代码生成”，13 条映射摘要按源码顺序为：查询代码生成表列表；获取代码生成表详细信息；查询数据库表列表；查询表字段列表；导入数据库表；创建数据库表；修改代码生成配置；删除代码生成表；预览生成代码；下载生成代码；生成代码；同步数据库表结构；批量生成代码。
+
+`SysJobController` 的 `@Tag` 为“定时任务”，8 条映射摘要按源码顺序为：查询定时任务列表；导出定时任务；获取定时任务详细信息；新增定时任务；修改定时任务；修改定时任务状态；执行一次定时任务；删除定时任务。
+
+`SysJobLogController` 的 `@Tag` 为“调度日志”，5 条映射摘要按源码顺序为：查询调度日志列表；导出调度日志；获取调度日志详细信息；删除调度日志；清空调度日志。
+
+根 POM 管理与 Springdoc 3.2.0 当前解析结果一致的 `swagger-annotations-jakarta:2.2.55`，生成器和调度模块各声明无版本号的直接编译依赖；Springdoc UI starter 仍只由 `opc-admin` 使用。
+
+- [ ] **Step 3: 重新执行静态、编译和运行时回归**
+
+运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-swagger-annotations.ps1`，确认 24 个 Controller、0 处缺失；运行 Maven `-pl opc-admin -am -DskipTests compile`，确认 `BUILD SUCCESS`。重启后端后重新检查 `/v3/api-docs` 的 26 条摘要、三个中文分组和 Swagger UI 可访问性，确认接口路径、权限及业务逻辑未变化。
 

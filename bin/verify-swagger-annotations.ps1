@@ -1,7 +1,22 @@
 ﻿$ErrorActionPreference = 'Stop'
 
-$controllerRoot = Join-Path $PSScriptRoot '..\opc-admin\src\main\java\com\opc\web\controller'
-$files = @(Get-ChildItem -LiteralPath $controllerRoot -Filter '*Controller.java' -File -Recurse | Sort-Object FullName)
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$sourceRoots = New-Object System.Collections.Generic.List[string]
+$pending = New-Object System.Collections.Generic.Stack[string]
+$pending.Push($repoRoot)
+while ($pending.Count -gt 0) {
+    $directory = $pending.Pop()
+    $sourceRoot = Join-Path $directory 'src\main\java'
+    if (Test-Path -LiteralPath $sourceRoot -PathType Container) { $sourceRoots.Add($sourceRoot) }
+    foreach ($child in Get-ChildItem -LiteralPath $directory -Directory) {
+        if ($child.Name -in @('.git', 'target', 'node_modules', 'src')) { continue }
+        $pending.Push($child.FullName)
+    }
+}
+$files = @($sourceRoots | Where-Object { Test-Path -LiteralPath $_ -PathType Container } | ForEach-Object {
+    Get-ChildItem -LiteralPath $_ -Filter '*Controller.java' -File -Recurse
+} | Sort-Object FullName)
+$controllerCount = 0
 $errors = New-Object System.Collections.Generic.List[string]
 $mappingPattern = '^\s*@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\b'
 $chinesePattern = '[\u4e00-\u9fff]'
@@ -115,7 +130,7 @@ function Test-AnnotationGap([string[]]$SourceLines, [object[]]$Records, [int]$Fi
 foreach ($file in $files) {
     $lines = [System.IO.File]::ReadAllLines($file.FullName)
     $maskedLines = (Get-CommentMaskedLines $lines).Lines
-    $relativePath = $file.FullName.Substring((Resolve-Path (Join-Path $PSScriptRoot '..')).Path.Length).TrimStart('\', '/')
+    $relativePath = $file.FullName.Substring($repoRoot.Length).TrimStart('\', '/')
     $annotations = @(Get-AnnotationRecords $lines $maskedLines)
 
     $controllerClassName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
@@ -123,6 +138,18 @@ foreach ($file in $files) {
     for ($i = 0; $i -lt $lines.Length; $i++) {
         if ($maskedLines[$i] -match ('^\s*(?:(?:public|abstract|final)\s+)*class\s+' + [regex]::Escape($controllerClassName) + '\b')) { $classIndices += $i }
     }
+    $webControllerFound = $false
+    foreach ($classIndex in $classIndices) {
+        foreach ($webAnnotation in $annotations | Where-Object { $_.Name -in @('RestController', 'Controller') -and $_.End -lt $classIndex }) {
+            if (Test-AnnotationGap $maskedLines $annotations ($webAnnotation.End + 1) ($classIndex - 1)) {
+                $webControllerFound = $true
+                break
+            }
+        }
+        if ($webControllerFound) { break }
+    }
+    if (-not $webControllerFound) { continue }
+    $controllerCount++
     $classTagFound = $false
     foreach ($classIndex in $classIndices) {
         $preceding = @($annotations | Where-Object { $_.Name -eq 'Tag' -and $_.End -lt $classIndex } | Select-Object -Last 1)
@@ -192,8 +219,9 @@ foreach ($file in $files) {
 
 if ($errors.Count -gt 0) {
     $errors | ForEach-Object { Write-Output $_ }
+    Write-Output "Swagger 中文注解检查失败，共检查 $controllerCount 个 Controller，发现 $($errors.Count) 处缺失。"
     exit 1
 }
 
-Write-Output "Swagger 中文注解检查通过，共检查 $($files.Count) 个 Controller。"
+Write-Output "Swagger 中文注解检查通过，共检查 $controllerCount 个 Controller。"
 exit 0

@@ -9,7 +9,7 @@ while ($pending.Count -gt 0) {
     $sourceRoot = Join-Path $directory 'src\main\java'
     if (Test-Path -LiteralPath $sourceRoot -PathType Container) { $sourceRoots.Add($sourceRoot) }
     foreach ($child in Get-ChildItem -LiteralPath $directory -Directory) {
-        if ($child.Name -in @('.git', 'target', 'node_modules', 'src')) { continue }
+        if ($child.Name -in @('.git', '.worktrees', 'worktrees', 'target', 'node_modules', 'src')) { continue }
         $pending.Push($child.FullName)
     }
 }

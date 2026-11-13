@@ -5,7 +5,7 @@ OPC 是一个基于 Java 与 Vue 的前后端分离管理平台，适合作为�
 ## 技术栈
 
 - 后端：Java 17、Spring Boot、Spring Security、MyBatis、Redis、JWT
-- 前端：Vue 3、Vite、Element Plus、Pinia
+- 前端：Vue 3、Vite、Element Plus、Pinia（构建与验证使用 Node.js 24.15.0 或更高的 Node 24 版本）
 - 数据库：MySQL
 
 ## 项目结构
@@ -47,11 +47,27 @@ mvn clean package
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
 前端开发服务器默认地址为 `http://127.0.0.1:5173`。
+
+## 构建验证与持续集成
+
+本地需要 Java 17、Maven、Node.js 24.15.0 或更高的 Node 24 版本，以及 `git`、`rg`。在仓库根目录执行统一验证入口：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
+```
+
+脚本依次检查仓库纳管边界、基础清理、安全 profile、Swagger 注解、Maven 测试、前端依赖锁定安装、前端测试与生产构建，并执行高危级别的 npm 依赖审计；任一阶段失败都会立即返回对应的非零退出码。GitHub Actions 的 `CI` workflow 会在每次 push 和 pull request 上使用相同入口。
+
+## 依赖安全扫描
+
+`Dependency Check` workflow 每周运行，也可在 GitHub Actions 中手动触发。它使用 OWASP Dependency-Check 对 Maven 聚合依赖执行 CVSS 7 阈值扫描，并执行 `npm ci` 和 `npm audit --audit-level=high`；HTML、JSON 报告会作为 workflow artifact 上传。扫描或数据源更新失败会使任务失败，报告仅代表扫描时可用的数据和规则，不应视为绝对无漏洞的保证。
+
+建议在仓库的 Actions secrets 中配置 `NVD_API_KEY`，以降低 NVD 数据更新的限流风险。workflow 只通过进程环境向 Dependency-Check 传入该值，不会主动输出密钥；未配置时仍会尝试使用公开数据源运行，数据源错误不会被忽略。
 
 ## 许可证
 

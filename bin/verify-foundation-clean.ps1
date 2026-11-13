@@ -30,6 +30,7 @@ $arguments = @(
     '--glob', '!**/target/**',
     '--glob', '!**/node_modules/**',
     '--glob', '!**/dist/**',
+    '--glob', '!logs/**',
     '--glob', '!docs/superpowers/**',
     '--glob', '!THIRD_PARTY_NOTICES.md',
     '--glob', '!opc-local.env.ps1',

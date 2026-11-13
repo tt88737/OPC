@@ -187,12 +187,24 @@ class AdminBootstrapServiceTest
         assertEquals(AdminBootstrapResult.REJECTED, service.bootstrap(STRONG_PASSWORD));
     }
 
+    @Test
+    void rejectsDeletedAdministratorWithInitializedPassword()
+    {
+        when(userMapper.initializeAdminPassword(anyString(), anyString())).thenReturn(0);
+        SysUser user = admin("0", "initialized-hash");
+        user.setDelFlag("2");
+
+        when(userMapper.selectUserById(1L)).thenReturn(user);
+        assertEquals(AdminBootstrapResult.REJECTED, service.bootstrap(STRONG_PASSWORD));
+    }
+
     private SysUser admin(String status, String password)
     {
         SysUser user = new SysUser();
         user.setUserId(1L);
         user.setUserName("admin");
         user.setStatus(status);
+        user.setDelFlag("0");
         user.setPassword(password);
         return user;
     }

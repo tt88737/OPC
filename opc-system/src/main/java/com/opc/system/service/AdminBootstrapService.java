@@ -92,6 +92,7 @@ public class AdminBootstrapService
                 && Long.valueOf(1L).equals(user.getUserId())
                 && "admin".equals(user.getUserName())
                 && "0".equals(user.getStatus())
+                && "0".equals(user.getDelFlag())
                 && user.getPassword() != null
                 && !user.getPassword().isEmpty()
                 && !PLACEHOLDER_PASSWORD_HASH.equals(user.getPassword());

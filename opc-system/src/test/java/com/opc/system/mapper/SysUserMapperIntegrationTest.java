@@ -53,7 +53,8 @@ class SysUserMapperIntegrationTest
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement())
         {
             statement.execute("create table sys_user (user_id bigint primary key, user_name varchar(30), "
-                    + "password varchar(100), status char(1), pwd_update_date timestamp, update_time timestamp)");
+                    + "password varchar(100), status char(1), del_flag char(1), "
+                    + "pwd_update_date timestamp, update_time timestamp)");
         }
 
         Configuration configuration = new Configuration();
@@ -114,6 +115,14 @@ class SysUserMapperIntegrationTest
         assertEquals(0, initialize(AdminBootstrapService.PLACEHOLDER_PASSWORD_HASH));
     }
 
+    @Test
+    void rejectsDeletedAdministratorWithPlaceholderHash() throws Exception
+    {
+        insertUser("admin", "1", "2", AdminBootstrapService.PLACEHOLDER_PASSWORD_HASH);
+
+        assertEquals(0, initialize(AdminBootstrapService.PLACEHOLDER_PASSWORD_HASH));
+    }
+
     private int initialize(String expectedPassword)
     {
         try (SqlSession session = sqlSessionFactory.openSession(true))
@@ -124,13 +133,19 @@ class SysUserMapperIntegrationTest
 
     private void insertUser(String userName, String status, String password) throws Exception
     {
+        insertUser(userName, status, "0", password);
+    }
+
+    private void insertUser(String userName, String status, String delFlag, String password) throws Exception
+    {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(
-                        "insert into sys_user (user_id, user_name, password, status) values (1, ?, ?, ?)"))
+                        "insert into sys_user (user_id, user_name, password, status, del_flag) values (1, ?, ?, ?, ?)"))
         {
             statement.setString(1, userName);
             statement.setString(2, password);
             statement.setString(3, status);
+            statement.setString(4, delFlag);
             statement.executeUpdate();
         }
     }

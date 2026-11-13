@@ -71,17 +71,25 @@ test('foundation verifier propagates a failing child exit code', async () => {
 })
 
 async function runFoundationCleanWithLogFixtures(fileNames) {
+  const files = Object.fromEntries(fileNames.map(fileName => [fileName, `${['admin', '123'].join('')}\n`]))
+  return runFoundationCleanFixture(files)
+}
+
+async function runFoundationCleanFixture(files) {
   const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-foundation-clean-'))
   try {
     await mkdir(join(fixtureRoot, 'bin'))
     await mkdir(join(fixtureRoot, 'logs'))
     await mkdir(join(fixtureRoot, 'sql'))
     await mkdir(join(fixtureRoot, 'frontend', 'src'), { recursive: true })
+    await mkdir(join(fixtureRoot, 'opc-admin', 'src', 'main', 'resources'), { recursive: true })
     await copyFile(new URL('../bin/verify-foundation-clean.ps1', import.meta.url), join(fixtureRoot, 'bin', 'verify-foundation-clean.ps1'))
-    for (const fileName of fileNames) {
+    const gitInit = spawnSync('git', ['init', '--quiet'], { cwd: fixtureRoot, encoding: 'utf8' })
+    assert.equal(gitInit.status, 0, gitInit.stderr || gitInit.stdout)
+    for (const [fileName, content] of Object.entries(files)) {
       const filePath = join(fixtureRoot, fileName)
       await mkdir(dirname(filePath), { recursive: true })
-      await writeFile(filePath, `${['admin', '123'].join('')}\n`, 'utf8')
+      await writeFile(filePath, content, 'utf8')
     }
 
     return spawnSync(powerShellExecutable, [
@@ -111,6 +119,45 @@ test('foundation residue scan still inspects non-log files under logs', async ()
   assert.match(result.stdout, /Foundation residue check failed/)
 })
 
+for (const [table, insert] of [
+  ['sys_dept', "insert into sys_dept values(101, 100, '0,100', '测试部门');\n"],
+  ['sys_post', "insert into sys_post values(1, 'test', '示例岗位');\n"],
+  ['sys_notice', "insert into sys_notice values(1, '示例通知');\n"]
+]) {
+  test(`foundation residue verifier rejects ${table} demo rows`, async () => {
+    const result = await runFoundationCleanFixture({ 'sql/opc_20260417.sql': insert })
+
+    assert.equal(result.status, 1, result.stderr || result.stdout)
+    assert.match(result.stdout, /Foundation SQL check failed/)
+  })
+}
+
+test('foundation residue verifier rejects the legacy banner', async () => {
+  const result = await runFoundationCleanFixture({
+    'opc-admin/src/main/resources/banner.txt': '_ooOoo_ o8888888o 永无 BUG\n'
+  })
+
+  assert.equal(result.status, 1, result.stderr || result.stdout)
+  assert.match(result.stdout, /Foundation banner check failed/)
+})
+
+test('foundation residue verifier accepts required configuration and third-party notices', async () => {
+  const upstreamName = ['Ruo', 'Yi'].join('')
+  const upstreamChineseName = String.fromCodePoint(0x82e5, 0x4f9d)
+  const legacyCopyright = `Copyright ${String.fromCodePoint(0x00a9)} 2018-2026`
+  const result = await runFoundationCleanFixture({
+    'sql/opc_20260417.sql': [
+      "insert into sys_menu values(1, '系统管理');",
+      "insert into sys_dict_type values(1, '通知类型');"
+    ].join('\n'),
+    'opc-admin/src/main/resources/banner.txt': 'OPC\n',
+    'THIRD_PARTY_NOTICES.md': `${upstreamName} ${upstreamChineseName}\n${legacyCopyright}\nMIT License\n`
+  })
+
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+  assert.match(result.stdout, /Foundation residue and credential checks passed/)
+})
+
 test('foundation SQL contains only neutral bootstrap data', async () => {
   const sql = await repositoryFile('sql/opc_20260417.sql')
 
@@ -125,12 +172,8 @@ test('foundation SQL contains only neutral bootstrap data', async () => {
   assert.match(sql, /insert into sys_dict_type values/i)
 })
 
-test('foundation residue verifier enforces SQL and banner cleanup without scanning third-party notices', async () => {
+test('foundation residue verifier keeps a narrow third-party notices exclusion', async () => {
   const verifier = await repositoryFile('bin/verify-foundation-clean.ps1')
-  assert.match(verifier, /sql[\\/]opc_20260417\.sql/)
-  assert.match(verifier, /sys_dept/)
-  assert.match(verifier, /sys_notice/)
-  assert.match(verifier, /banner\.txt/)
   assert.match(verifier, /THIRD_PARTY_NOTICES\.md/)
   assert.doesNotMatch(verifier, /!\*\*\/\*\.md/)
 })

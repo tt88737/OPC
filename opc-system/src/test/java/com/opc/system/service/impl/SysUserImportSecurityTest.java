@@ -1,14 +1,15 @@
 package com.opc.system.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
 
 import java.util.List;
 import java.util.Set;
@@ -26,6 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.opc.common.core.domain.entity.SysUser;
 import com.opc.system.mapper.SysUserMapper;
 import com.opc.system.service.ISysDeptService;
+import com.opc.system.service.SecureTemporaryPasswordGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class SysUserImportSecurityTest
@@ -39,12 +41,15 @@ class SysUserImportSecurityTest
     @Mock
     private Validator validator;
 
+    @Mock
+    private SecureTemporaryPasswordGenerator passwordGenerator;
+
     private SysUserServiceImpl service;
 
     @BeforeEach
     void setUp()
     {
-        service = spy(new SysUserServiceImpl());
+        service = spy(new SysUserServiceImpl(passwordGenerator));
         ReflectionTestUtils.setField(service, "userMapper", userMapper);
         ReflectionTestUtils.setField(service, "deptService", deptService);
         ReflectionTestUtils.setField(service, "validator", validator);
@@ -54,6 +59,9 @@ class SysUserImportSecurityTest
     @Test
     void newImportsReceiveUniqueUnrecoverablePasswordsAndAreDisabled()
     {
+        String firstCredential = "first-random-import-credential";
+        String secondCredential = "second-random-import-credential";
+        when(passwordGenerator.generate()).thenReturn(firstCredential, secondCredential);
         SysUser first = importUser("alice");
         SysUser second = importUser("bob");
 
@@ -63,12 +71,12 @@ class SysUserImportSecurityTest
         verify(userMapper, org.mockito.Mockito.times(2)).insertUser(users.capture());
         String firstHash = users.getAllValues().get(0).getPassword();
         String secondHash = users.getAllValues().get(1).getPassword();
-        assertTrue(firstHash.startsWith("$2"));
-        assertTrue(secondHash.startsWith("$2"));
+        verify(passwordGenerator, times(2)).generate();
+        assertTrue(new BCryptPasswordEncoder().matches(firstCredential, firstHash));
+        assertTrue(new BCryptPasswordEncoder().matches(secondCredential, secondHash));
         assertNotEquals(firstHash, secondHash);
         assertEquals("1", users.getAllValues().get(0).getStatus());
         assertEquals("1", users.getAllValues().get(1).getStatus());
-        assertFalse(new BCryptPasswordEncoder().matches("Strong!Pass2026", firstHash));
     }
 
     @Test
@@ -86,6 +94,7 @@ class SysUserImportSecurityTest
 
         service.importUser(List.of(update), true, "operator");
 
+        verify(passwordGenerator, never()).generate();
         ArgumentCaptor<SysUser> updatedUser = ArgumentCaptor.forClass(SysUser.class);
         verify(userMapper).updateUser(updatedUser.capture());
         assertEquals(null, updatedUser.getValue().getPassword());

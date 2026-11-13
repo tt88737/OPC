@@ -1,8 +1,6 @@
 package com.opc.system.service.impl;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +30,7 @@ import com.opc.system.mapper.SysUserPostMapper;
 import com.opc.system.mapper.SysUserRoleMapper;
 import com.opc.system.service.ISysDeptService;
 import com.opc.system.service.ISysUserService;
+import com.opc.system.service.SecureTemporaryPasswordGenerator;
 
 /**
  * 用户 业务层处理
@@ -42,7 +41,13 @@ import com.opc.system.service.ISysUserService;
 public class SysUserServiceImpl implements ISysUserService
 {
     private static final Logger log = LoggerFactory.getLogger(SysUserServiceImpl.class);
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private final SecureTemporaryPasswordGenerator passwordGenerator;
+
+    public SysUserServiceImpl(SecureTemporaryPasswordGenerator passwordGenerator)
+    {
+        this.passwordGenerator = passwordGenerator;
+    }
 
     @Autowired
     private SysUserMapper userMapper;
@@ -516,10 +521,7 @@ public class SysUserServiceImpl implements ISysUserService
                 {
                     BeanValidators.validateWithException(validator, user);
                     deptService.checkDeptDataScope(user.getDeptId());
-                    byte[] randomPassword = new byte[32];
-                    SECURE_RANDOM.nextBytes(randomPassword);
-                    user.setPassword(SecurityUtils.encryptPassword(
-                            Base64.getUrlEncoder().withoutPadding().encodeToString(randomPassword)));
+                    user.setPassword(SecurityUtils.encryptPassword(passwordGenerator.generate()));
                     user.setStatus("1");
                     user.setCreateBy(operName);
                     userMapper.insertUser(user);

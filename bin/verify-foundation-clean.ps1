@@ -19,37 +19,65 @@ $patterns = @(
 )
 
 $arguments = @(
+    '--no-ignore',
     '--line-number',
     '--ignore-case',
     '--hidden',
     '--glob', '!.git',
     '--glob', '!**/.git/**',
+    '--glob', '!.worktrees/**',
+    '--glob', '!**/.worktrees/**',
+    '--glob', '!worktrees/**',
+    '--glob', '!**/worktrees/**',
     '--glob', '!**/target/**',
-    '--glob', '!frontend/node_modules/**',
-    '--glob', '!frontend/dist/**',
+    '--glob', '!**/node_modules/**',
+    '--glob', '!**/dist/**',
     '--glob', '!docs/superpowers/**',
     '--glob', '!THIRD_PARTY_NOTICES.md',
-    '--regexp', ($patterns -join '|'),
-    '.'
+    '--glob', '!opc-local.env.ps1',
+    '--glob', '!**/*.local',
+    '--glob', '!**/.idea/**',
+    '--glob', '!**/.vscode/**',
+    '--glob', '!.local-backups/**',
+    '--glob', '!dependency-tree*.txt',
+    '--glob', '!task_plan.md',
+    '--glob', '!findings.md',
+    '--glob', '!progress.md',
+    '--glob', '!powershell-console-backup.reg',
+    '--glob', '!powershell-diagnostics.md',
+    '--regexp', ($patterns -join '|')
 )
 
 Push-Location $repoRoot
 try {
-    & rg @arguments
-    $scanExitCode = $LASTEXITCODE
+    $primaryArguments = $arguments + @('--glob', '!**/build/**', '.')
+    & rg @primaryArguments
+    $primaryExitCode = $LASTEXITCODE
+
+    $sourceBuildExitCode = 1
+    $sourceBuildRoot = 'frontend/src/views/tool/build'
+    if (Test-Path -LiteralPath $sourceBuildRoot -PathType Container) {
+        & rg @arguments $sourceBuildRoot
+        $sourceBuildExitCode = $LASTEXITCODE
+    }
 } finally {
     Pop-Location
 }
 
-if ($scanExitCode -eq 0) {
+if ($primaryExitCode -gt 1 -or $sourceBuildExitCode -gt 1) {
+    Write-Output "Foundation residue scan failed to execute. rg exit codes: primary=$primaryExitCode source-build=$sourceBuildExitCode"
+    exit 2
+}
+
+if ($primaryExitCode -eq 0 -or $sourceBuildExitCode -eq 0) {
     Write-Output 'Foundation residue check failed: upstream examples, default credentials, or legacy copyright text found.'
     exit 1
 }
 
-if ($scanExitCode -eq 1) {
+if ($primaryExitCode -eq 1 -and $sourceBuildExitCode -eq 1) {
     Write-Output 'Foundation residue check passed.'
     exit 0
 }
 
-Write-Output "Foundation residue scan failed to execute. rg exit code: $scanExitCode"
-exit $scanExitCode
+Write-Output "Foundation residue scan returned unexpected exit codes: primary=$primaryExitCode source-build=$sourceBuildExitCode"
+exit 2

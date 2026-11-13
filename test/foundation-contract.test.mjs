@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import test from 'node:test'
 
 const rootUrl = new URL('../', import.meta.url)
@@ -33,10 +36,45 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /exit\s+\$stageExitCode/)
 })
 
-test('foundation residue scan excludes local runtime logs', async () => {
-  const script = await repositoryFile('bin/verify-foundation-clean.ps1')
+async function runFoundationCleanWithLogFixtures(fileNames) {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-foundation-clean-'))
+  try {
+    await mkdir(join(fixtureRoot, 'bin'))
+    await mkdir(join(fixtureRoot, 'logs'))
+    await mkdir(join(fixtureRoot, 'sql'))
+    await mkdir(join(fixtureRoot, 'frontend', 'src'), { recursive: true })
+    await copyFile(new URL('../bin/verify-foundation-clean.ps1', import.meta.url), join(fixtureRoot, 'bin', 'verify-foundation-clean.ps1'))
+    for (const fileName of fileNames) {
+      const filePath = join(fixtureRoot, fileName)
+      await mkdir(dirname(filePath), { recursive: true })
+      await writeFile(filePath, `${['admin', '123'].join('')}\n`, 'utf8')
+    }
 
-  assert.match(script, /--glob',\s*'!logs\/\*\*'/)
+    return spawnSync('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', join(fixtureRoot, 'bin', 'verify-foundation-clean.ps1')
+    ], { cwd: fixtureRoot, encoding: 'utf8' })
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true })
+  }
+}
+
+test('foundation residue scan excludes ignored log files', async () => {
+  const result = await runFoundationCleanWithLogFixtures([
+    'runtime.log',
+    'logs/runtime.log',
+    'nested/runtime.log'
+  ])
+
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+})
+
+test('foundation residue scan still inspects non-log files under logs', async () => {
+  const result = await runFoundationCleanWithLogFixtures(['logs/legacy.js'])
+
+  assert.equal(result.status, 1, result.stderr || result.stdout)
+  assert.match(result.stdout, /Foundation residue check failed/)
 })
 
 test('CI uses Java 17 and a supported Node 24 release', async () => {

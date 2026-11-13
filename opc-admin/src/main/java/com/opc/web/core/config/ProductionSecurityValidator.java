@@ -51,6 +51,14 @@ public class ProductionSecurityValidator implements InitializingBean
                 violations.add(propertyName);
             }
         }
+        if (!"health".equals(environment.getProperty("management.endpoints.web.exposure.include")))
+        {
+            violations.add("management.endpoints.web.exposure.include");
+        }
+        if (!"never".equalsIgnoreCase(environment.getProperty("management.endpoint.health.show-details")))
+        {
+            violations.add("management.endpoint.health.show-details");
+        }
         if (!violations.isEmpty())
         {
             throw new IllegalStateException("Production security invariant violation: "

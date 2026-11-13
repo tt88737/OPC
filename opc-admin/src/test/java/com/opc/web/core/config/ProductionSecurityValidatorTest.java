@@ -25,6 +25,8 @@ class ProductionSecurityValidatorTest
             Map.entry("spring.devtools.restart.enabled", "false"),
             Map.entry("spring.datasource.druid.web-stat-filter.enabled", "false"),
             Map.entry("spring.datasource.druid.stat-view-servlet.enabled", "false"),
+            Map.entry("management.endpoints.web.exposure.include", "health"),
+            Map.entry("management.endpoint.health.show-details", "never"),
             Map.entry("spring.datasource.druid.master.url", "jdbc:mysql://db.example/opc"),
             Map.entry("spring.datasource.druid.master.username", "opc"),
             Map.entry("spring.datasource.druid.master.password", "database-secret"),
@@ -47,6 +49,14 @@ class ProductionSecurityValidatorTest
     void rejectsHighPriorityOverridesThatEnableProductionFeatures(String propertyName)
     {
         contextRunner(SAFE_PRODUCTION_PROPERTIES, propertyName + "=true").run(context ->
+                assertRejected(context.getStartupFailure(), propertyName));
+    }
+
+    @ParameterizedTest
+    @MethodSource("unsafeManagementOverrides")
+    void rejectsHighPriorityOverridesThatExposeManagementData(String propertyName, String value)
+    {
+        contextRunner(SAFE_PRODUCTION_PROPERTIES, propertyName + "=" + value).run(context ->
                 assertRejected(context.getStartupFailure(), propertyName));
     }
 
@@ -129,6 +139,14 @@ class ProductionSecurityValidatorTest
                 "spring.data.redis.password",
                 "token.secret",
                 "cors.allowed-origins");
+    }
+
+    static Stream<Arguments> unsafeManagementOverrides()
+    {
+        return Stream.of(
+                Arguments.of("management.endpoints.web.exposure.include", "health,env"),
+                Arguments.of("management.endpoints.web.exposure.include", "*"),
+                Arguments.of("management.endpoint.health.show-details", "always"));
     }
 
     static Stream<Arguments> requiredProductionPropertiesAndUnicodeSpaces()

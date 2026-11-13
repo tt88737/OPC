@@ -71,6 +71,8 @@ class SecurityProfileConfigDataIntegrationTest
             assertEquals("redis-secret", environment.getProperty("spring.data.redis.password"));
             assertEquals("token-secret", environment.getProperty("token.secret"));
             assertEquals("https://app.example", environment.getProperty("cors.allowed-origins"));
+            assertEquals("health", environment.getProperty("management.endpoints.web.exposure.include"));
+            assertEquals("never", environment.getProperty("management.endpoint.health.show-details"));
             assertNotNull(context.getBean(ProductionSecurityValidator.class));
         });
     }
@@ -91,6 +93,24 @@ class SecurityProfileConfigDataIntegrationTest
                                 "SPRING_DATASOURCE_DRUID_STAT_VIEW_SERVLET_ENABLED", "true"))))
                 .run(context -> assertRejected(context.getStartupFailure(),
                         "spring.datasource.druid.stat-view-servlet.enabled"));
+    }
+
+    @Test
+    void rejectsCanonicalSystemPropertyThatExposesProdEnvironmentEndpoint()
+    {
+        productionConfigDataRunner("management.endpoints.web.exposure.include=health,env").run(context ->
+                assertRejected(context.getStartupFailure(), "management.endpoints.web.exposure.include"));
+    }
+
+    @Test
+    void rejectsStandardEnvironmentPropertyThatExposesProdHealthDetails()
+    {
+        productionConfigDataRunner()
+                .withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(
+                        new SystemEnvironmentPropertySource("management-security-test-environment", Map.of(
+                                "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS", "always"))))
+                .run(context -> assertRejected(context.getStartupFailure(),
+                        "management.endpoint.health.show-details"));
     }
 
     private ApplicationContextRunner configDataRunner()

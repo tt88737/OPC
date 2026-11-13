@@ -52,7 +52,7 @@ public class SysJobController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:job:list')")
     @Operation(summary = "查询定时任务列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "定时任务查询条件", required = false) SysJob sysJob)
     {
         startPage();
@@ -81,7 +81,7 @@ public class SysJobController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:job:query')")
     @Operation(summary = "获取定时任务详细信息")
     @GetMapping(value = "/{jobId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "定时任务编号", required = true, example = "1") @PathVariable("jobId") Long jobId)
     {
         return success(jobService.selectJobById(jobId));
@@ -94,7 +94,7 @@ public class SysJobController extends BaseController
     @Log(title = "定时任务", businessType = BusinessType.INSERT)
     @Operation(summary = "新增定时任务")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增定时任务", required = true) @RequestBody SysJob job) throws SchedulerException, TaskException
     {
         if (!CronUtils.isValid(job.getCronExpression()))
@@ -132,7 +132,7 @@ public class SysJobController extends BaseController
     @Log(title = "定时任务", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改定时任务")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改定时任务", required = true) @RequestBody SysJob job) throws SchedulerException, TaskException
     {
         if (!CronUtils.isValid(job.getCronExpression()))
@@ -170,7 +170,7 @@ public class SysJobController extends BaseController
     @Log(title = "定时任务", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改定时任务状态")
     @PutMapping("/changeStatus")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult changeStatus(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "定时任务状态信息", required = true) @RequestBody SysJob job) throws SchedulerException
     {
         SysJob newJob = jobService.selectJobById(job.getJobId());
@@ -185,7 +185,7 @@ public class SysJobController extends BaseController
     @Log(title = "定时任务", businessType = BusinessType.UPDATE)
     @Operation(summary = "执行一次定时任务")
     @PutMapping("/run")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult run(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "待执行的定时任务", required = true) @RequestBody SysJob job) throws SchedulerException
     {
         boolean result = jobService.run(job);
@@ -199,7 +199,7 @@ public class SysJobController extends BaseController
     @Log(title = "定时任务", businessType = BusinessType.DELETE)
     @Operation(summary = "删除定时任务")
     @DeleteMapping("/{jobIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "定时任务编号列表", required = true, example = "1,2") @PathVariable Long[] jobIds) throws SchedulerException
     {
         jobService.deleteJobByIds(jobIds);

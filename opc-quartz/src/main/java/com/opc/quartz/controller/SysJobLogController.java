@@ -44,7 +44,7 @@ public class SysJobLogController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:job:list')")
     @Operation(summary = "查询调度日志列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "调度日志查询条件", required = false) SysJobLog sysJobLog)
     {
         startPage();
@@ -73,7 +73,7 @@ public class SysJobLogController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:job:query')")
     @Operation(summary = "获取调度日志详细信息")
     @GetMapping(value = "/{jobLogId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "调度日志编号", required = true, example = "1") @PathVariable Long jobLogId)
     {
         return success(jobLogService.selectJobLogById(jobLogId));
@@ -87,7 +87,7 @@ public class SysJobLogController extends BaseController
     @Log(title = "定时任务调度日志", businessType = BusinessType.DELETE)
     @Operation(summary = "删除调度日志")
     @DeleteMapping("/{jobLogIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "调度日志编号列表", required = true, example = "1,2") @PathVariable Long[] jobLogIds)
     {
         return toAjax(jobLogService.deleteJobLogByIds(jobLogIds));
@@ -100,7 +100,7 @@ public class SysJobLogController extends BaseController
     @Log(title = "调度日志", businessType = BusinessType.CLEAN)
     @Operation(summary = "清空调度日志")
     @DeleteMapping("/clean")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clean()
     {
         jobLogService.cleanJobLog();

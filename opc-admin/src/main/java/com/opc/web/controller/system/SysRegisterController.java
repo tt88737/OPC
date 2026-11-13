@@ -34,7 +34,7 @@ public class SysRegisterController extends BaseController
 
     @PostMapping("/register")
     @Operation(summary = "注册用户")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult register(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户注册信息", required = true) @RequestBody RegisterBody user)
     {
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser"))))

@@ -51,7 +51,7 @@ public class SysNoticeController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:notice:list')")
     @Operation(summary = "查询通知公告列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "通知公告查询条件", required = false) SysNotice notice)
     {
         startPage();
@@ -64,7 +64,7 @@ public class SysNoticeController extends BaseController
      */
     @Operation(summary = "获取通知公告详细信息")
     @GetMapping(value = "/{noticeId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "公告编号", required = true, example = "1") @PathVariable Long noticeId)
     {
         return success(noticeService.selectNoticeById(noticeId));
@@ -77,7 +77,7 @@ public class SysNoticeController extends BaseController
     @Log(title = "通知公告", businessType = BusinessType.INSERT)
     @Operation(summary = "新增通知公告")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增通知公告", required = true) @RequestBody SysNotice notice)
     {
         notice.setCreateBy(getUsername());
@@ -91,7 +91,7 @@ public class SysNoticeController extends BaseController
     @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改通知公告")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改通知公告", required = true) @RequestBody SysNotice notice)
     {
         notice.setUpdateBy(getUsername());
@@ -104,7 +104,7 @@ public class SysNoticeController extends BaseController
     @Operation(summary = "查询顶部通知公告")
     @GetMapping("/listTop")
     @ResponseBody
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult listTop()
     {
         Long userId = getUserId();
@@ -121,7 +121,7 @@ public class SysNoticeController extends BaseController
     @Operation(summary = "标记通知公告已读")
     @PostMapping("/markRead")
     @ResponseBody
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult markRead(@Parameter(description = "公告编号", required = true, example = "1") Long noticeId)
     {
         Long userId = getUserId();
@@ -135,7 +135,7 @@ public class SysNoticeController extends BaseController
     @Operation(summary = "批量标记通知公告已读")
     @PostMapping("/markReadAll")
     @ResponseBody
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult markReadAll(@Parameter(description = "公告编号列表", required = true, example = "1,2") String ids)
     {
         Long userId = getUserId();
@@ -151,7 +151,7 @@ public class SysNoticeController extends BaseController
     @Operation(summary = "查询通知公告已读用户")
     @GetMapping("/readUsers/list")
     @ResponseBody
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo readUsersList(@Parameter(description = "公告编号", required = true, example = "1") Long noticeId,
             @Parameter(description = "用户查询关键字", required = false, example = "admin") String searchValue)
     {
@@ -167,7 +167,7 @@ public class SysNoticeController extends BaseController
     @Log(title = "通知公告", businessType = BusinessType.DELETE)
     @Operation(summary = "删除通知公告")
     @DeleteMapping("/{noticeIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "公告编号列表", required = true, example = "1,2") @PathVariable Long[] noticeIds)
     {
         noticeReadService.deleteByNoticeIds(noticeIds);

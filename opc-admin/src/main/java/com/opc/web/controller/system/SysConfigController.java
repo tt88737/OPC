@@ -47,7 +47,7 @@ public class SysConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:config:list')")
     @Operation(summary = "查询参数列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "参数配置查询条件", required = false) SysConfig config)
     {
         startPage();
@@ -73,7 +73,7 @@ public class SysConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:config:query')")
     @Operation(summary = "获取参数详细信息")
     @GetMapping(value = "/{configId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "参数配置编号", required = true, example = "1") @PathVariable Long configId)
     {
         return success(configService.selectConfigById(configId));
@@ -84,7 +84,7 @@ public class SysConfigController extends BaseController
      */
     @Operation(summary = "根据参数键名查询参数值")
     @GetMapping(value = "/configKey/{configKey}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getConfigKey(@Parameter(description = "参数配置键名", required = true, example = "sys.index.skinName") @PathVariable String configKey)
     {
         return success(configService.selectConfigByKey(configKey));
@@ -97,7 +97,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增参数")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增参数配置", required = true) @RequestBody SysConfig config)
     {
         if (!configService.checkConfigKeyUnique(config))
@@ -115,7 +115,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改参数")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改参数配置", required = true) @RequestBody SysConfig config)
     {
         if (!configService.checkConfigKeyUnique(config))
@@ -133,7 +133,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除参数")
     @DeleteMapping("/{configIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "参数配置编号列表", required = true, example = "1,2") @PathVariable Long[] configIds)
     {
         configService.deleteConfigByIds(configIds);
@@ -147,7 +147,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.CLEAN)
     @Operation(summary = "刷新参数缓存")
     @DeleteMapping("/refreshCache")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult refreshCache()
     {
         configService.resetConfigCache();

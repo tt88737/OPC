@@ -47,7 +47,7 @@ public class SysPostController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:post:list')")
     @Operation(summary = "查询岗位列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "岗位查询条件", required = false) SysPost post)
     {
         startPage();
@@ -73,7 +73,7 @@ public class SysPostController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:post:query')")
     @Operation(summary = "获取岗位详细信息")
     @GetMapping(value = "/{postId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "岗位编号", required = true, example = "1") @PathVariable Long postId)
     {
         return success(postService.selectPostById(postId));
@@ -86,7 +86,7 @@ public class SysPostController extends BaseController
     @Log(title = "岗位管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增岗位")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增岗位", required = true) @RequestBody SysPost post)
     {
         if (!postService.checkPostNameUnique(post))
@@ -108,7 +108,7 @@ public class SysPostController extends BaseController
     @Log(title = "岗位管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改岗位")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改岗位", required = true) @RequestBody SysPost post)
     {
         if (!postService.checkPostNameUnique(post))
@@ -130,7 +130,7 @@ public class SysPostController extends BaseController
     @Log(title = "岗位管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除岗位")
     @DeleteMapping("/{postIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "岗位编号列表", required = true, example = "1,2") @PathVariable Long[] postIds)
     {
         return toAjax(postService.deletePostByIds(postIds));
@@ -141,7 +141,7 @@ public class SysPostController extends BaseController
      */
     @Operation(summary = "获取岗位选择列表")
     @GetMapping("/optionselect")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult optionselect()
     {
         List<SysPost> posts = postService.selectPostAll();

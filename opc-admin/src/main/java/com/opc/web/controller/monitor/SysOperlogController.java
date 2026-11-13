@@ -41,7 +41,7 @@ public class SysOperlogController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:operlog:list')")
     @Operation(summary = "查询操作日志列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "操作日志查询条件", required = false) SysOperLog operLog)
     {
         startPage();
@@ -65,7 +65,7 @@ public class SysOperlogController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:operlog:remove')")
     @Operation(summary = "删除操作日志")
     @DeleteMapping("/{operIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "操作日志编号列表", required = true, example = "1,2") @PathVariable Long[] operIds)
     {
         return toAjax(operLogService.deleteOperLogByIds(operIds));
@@ -75,7 +75,7 @@ public class SysOperlogController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:operlog:remove')")
     @Operation(summary = "清空操作日志")
     @DeleteMapping("/clean")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clean()
     {
         operLogService.cleanOperLog();

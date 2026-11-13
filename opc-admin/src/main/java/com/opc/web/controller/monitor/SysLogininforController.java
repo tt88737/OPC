@@ -45,7 +45,7 @@ public class SysLogininforController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:logininfor:list')")
     @Operation(summary = "查询登录日志列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "登录日志查询条件", required = false) SysLogininfor logininfor)
     {
         startPage();
@@ -69,7 +69,7 @@ public class SysLogininforController extends BaseController
     @Log(title = "登录日志", businessType = BusinessType.DELETE)
     @Operation(summary = "删除登录日志")
     @DeleteMapping("/{infoIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "登录日志编号列表", required = true, example = "1,2") @PathVariable Long[] infoIds)
     {
         return toAjax(logininforService.deleteLogininforByIds(infoIds));
@@ -79,7 +79,7 @@ public class SysLogininforController extends BaseController
     @Log(title = "登录日志", businessType = BusinessType.CLEAN)
     @Operation(summary = "清空登录日志")
     @DeleteMapping("/clean")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clean()
     {
         logininforService.cleanLogininfor();
@@ -90,7 +90,7 @@ public class SysLogininforController extends BaseController
     @Log(title = "账户解锁", businessType = BusinessType.OTHER)
     @Operation(summary = "解锁登录用户")
     @GetMapping("/unlock/{userName}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult unlock(@Parameter(description = "登录用户名", required = true, example = "admin") @PathVariable("userName") String userName)
     {
         passwordService.clearLoginRecordCache(userName);

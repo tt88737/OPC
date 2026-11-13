@@ -66,7 +66,7 @@ public class SysUserController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:user:list')")
     @Operation(summary = "查询用户列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "用户查询条件", required = false) SysUser user)
     {
         startPage();
@@ -90,7 +90,7 @@ public class SysUserController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:user:import')")
     @Operation(summary = "导入用户数据")
     @PostMapping("/importData")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult importData(@Parameter(description = "用户导入文件", required = true, content = @Content(mediaType = "multipart/form-data")) MultipartFile file,
             @Parameter(description = "是否更新已存在用户", required = false, example = "false") boolean updateSupport) throws Exception
     {
@@ -116,7 +116,7 @@ public class SysUserController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:user:query')")
     @Operation(summary = "获取用户详细信息")
     @GetMapping(value = { "/", "/{userId}" })
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "用户编号", required = false, example = "1") @PathVariable(value = "userId", required = false) Long userId)
     {
         AjaxResult ajax = AjaxResult.success();
@@ -141,7 +141,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增用户")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增用户", required = true) @RequestBody SysUser user)
     {
         deptService.checkDeptDataScope(user.getDeptId());
@@ -170,7 +170,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改用户")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改用户", required = true) @RequestBody SysUser user)
     {
         userService.checkUserAllowed(user);
@@ -200,7 +200,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除用户")
     @DeleteMapping("/{userIds}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "用户编号列表", required = true, example = "1,2") @PathVariable Long[] userIds)
     {
         if (ArrayUtils.contains(userIds, getUserId()))
@@ -217,7 +217,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "重置用户密码")
     @PutMapping("/resetPwd")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult resetPwd(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户密码重置参数", required = true) @RequestBody SysUser user)
     {
         userService.checkUserAllowed(user);
@@ -234,7 +234,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改用户状态")
     @PutMapping("/changeStatus")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult changeStatus(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户状态参数", required = true) @RequestBody SysUser user)
     {
         userService.checkUserAllowed(user);
@@ -249,7 +249,7 @@ public class SysUserController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:user:query')")
     @Operation(summary = "获取用户授权角色")
     @GetMapping("/authRole/{userId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult authRole(@Parameter(description = "用户编号", required = true, example = "1") @PathVariable("userId") Long userId)
     {
         AjaxResult ajax = AjaxResult.success();
@@ -267,7 +267,7 @@ public class SysUserController extends BaseController
     @Log(title = "用户管理", businessType = BusinessType.GRANT)
     @Operation(summary = "保存用户角色授权")
     @PutMapping("/authRole")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult insertAuthRole(@Parameter(description = "用户编号", required = true, example = "1") Long userId,
             @Parameter(description = "角色编号列表", required = true, example = "1,2") Long[] roleIds)
     {
@@ -283,7 +283,7 @@ public class SysUserController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:user:list')")
     @Operation(summary = "获取部门树")
     @GetMapping("/deptTree")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult deptTree(@Parameter(description = "部门查询条件", required = false) SysDept dept)
     {
         return success(deptService.selectDeptTreeList(dept));

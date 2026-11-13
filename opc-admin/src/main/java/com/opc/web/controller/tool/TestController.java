@@ -40,7 +40,7 @@ public class TestController extends BaseController
     
     @Operation(summary = "获取用户列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = R.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = R.class)))
     public R<List<UserEntity>> userList()
     {
         List<UserEntity> userList = new ArrayList<UserEntity>(users.values());
@@ -49,7 +49,7 @@ public class TestController extends BaseController
     
     @Operation(summary = "获取用户详细")
     @GetMapping("/{userId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = R.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = R.class)))
     public R<UserEntity> getUser(@Parameter(description = "用户编号", required = true, example = "1") @PathVariable(name = "userId") Integer userId)
     {
         if (!users.isEmpty() && users.containsKey(userId))
@@ -64,7 +64,7 @@ public class TestController extends BaseController
     
     @Operation(summary = "新增用户")
     @PostMapping("/save")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = R.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = R.class)))
     public R<String> save(@Parameter(description = "用户信息", required = true) UserEntity user)
     {
         if (StringUtils.isNull(user) || StringUtils.isNull(user.getUserId()))
@@ -77,7 +77,7 @@ public class TestController extends BaseController
     
     @Operation(summary = "更新用户")
     @PutMapping("/update")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = R.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = R.class)))
     public R<String> update(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户信息", required = true) @RequestBody UserEntity user)
     {
         if (StringUtils.isNull(user) || StringUtils.isNull(user.getUserId()))
@@ -95,7 +95,7 @@ public class TestController extends BaseController
     
     @Operation(summary = "删除用户信息")
     @DeleteMapping("/{userId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = R.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = R.class)))
     public R<String> delete(@Parameter(description = "用户编号", required = true, example = "1") @PathVariable(name = "userId") Integer userId)
     {
         if (!users.isEmpty() && users.containsKey(userId))

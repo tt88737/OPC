@@ -50,7 +50,7 @@ public class SysDictDataController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @Operation(summary = "查询字典数据列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TableDataInfo.class)))
     public TableDataInfo list(@Parameter(description = "字典数据查询条件", required = false) SysDictData dictData)
     {
         startPage();
@@ -76,7 +76,7 @@ public class SysDictDataController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dict:query')")
     @Operation(summary = "获取字典数据详细信息")
     @GetMapping(value = "/{dictCode}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "字典编码", required = true, example = "1") @PathVariable Long dictCode)
     {
         return success(dictDataService.selectDictDataById(dictCode));
@@ -87,7 +87,7 @@ public class SysDictDataController extends BaseController
      */
     @Operation(summary = "根据字典类型查询数据")
     @GetMapping(value = "/type/{dictType}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult dictType(@Parameter(description = "字典类型", required = true, example = "sys_user_sex") @PathVariable String dictType)
     {
         List<SysDictData> data = dictTypeService.selectDictDataByType(dictType);
@@ -105,7 +105,7 @@ public class SysDictDataController extends BaseController
     @Log(title = "字典数据", businessType = BusinessType.INSERT)
     @Operation(summary = "新增字典数据")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增字典数据", required = true) @RequestBody SysDictData dict)
     {
         dict.setCreateBy(getUsername());
@@ -119,7 +119,7 @@ public class SysDictDataController extends BaseController
     @Log(title = "字典数据", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改字典数据")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改字典数据", required = true) @RequestBody SysDictData dict)
     {
         dict.setUpdateBy(getUsername());
@@ -133,7 +133,7 @@ public class SysDictDataController extends BaseController
     @Log(title = "字典类型", businessType = BusinessType.DELETE)
     @Operation(summary = "删除字典数据")
     @DeleteMapping("/{dictCodes}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "字典编码列表", required = true, example = "1,2") @PathVariable Long[] dictCodes)
     {
         dictDataService.deleteDictDataByIds(dictCodes);

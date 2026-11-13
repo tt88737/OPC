@@ -53,7 +53,7 @@ public class SysProfileController extends BaseController
      */
     @Operation(summary = "获取个人信息")
     @GetMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult profile()
     {
         LoginUser loginUser = getLoginUser();
@@ -70,7 +70,7 @@ public class SysProfileController extends BaseController
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人信息")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult updateProfile(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户个人资料", required = true) @RequestBody SysUser user)
     {
         LoginUser loginUser = getLoginUser();
@@ -102,7 +102,7 @@ public class SysProfileController extends BaseController
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人密码")
     @PutMapping("/updatePwd")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult updatePwd(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "密码修改参数", required = true) @RequestBody Map<String, String> params)
     {
         String oldPassword = params.get("oldPassword");
@@ -135,9 +135,9 @@ public class SysProfileController extends BaseController
      * 头像上传
      */
     @Log(title = "用户头像", businessType = BusinessType.UPDATE)
-    @Operation(summary = "上传用户头像")
+    @Operation(summary = "上传用户头像", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户头像文件", required = true, content = @Content(mediaType = "multipart/form-data")))
     @PostMapping("/avatar")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult avatar(@Parameter(description = "用户头像文件", required = true, content = @Content(mediaType = "multipart/form-data")) @RequestParam("avatarfile") MultipartFile file) throws Exception
     {
         if (!file.isEmpty())

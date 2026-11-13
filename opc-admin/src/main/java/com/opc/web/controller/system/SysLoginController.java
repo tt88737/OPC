@@ -62,7 +62,7 @@ public class SysLoginController
      */
     @PostMapping("/login")
     @Operation(summary = "用户登录")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户登录信息", required = true) @RequestBody LoginBody loginBody)
     {
         AjaxResult ajax = AjaxResult.success();
@@ -80,7 +80,7 @@ public class SysLoginController
      */
     @GetMapping("getInfo")
     @Operation(summary = "获取当前用户信息")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo()
     {
         LoginUser loginUser = SecurityUtils.getLoginUser();
@@ -111,7 +111,7 @@ public class SysLoginController
      */
     @GetMapping("getRouters")
     @Operation(summary = "获取当前用户路由")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getRouters()
     {
         Long userId = SecurityUtils.getUserId();

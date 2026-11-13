@@ -56,7 +56,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "获取缓存监控信息")
     @GetMapping()
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo() throws Exception
     {
         Properties info = (Properties) redisTemplate.execute((RedisCallback<Object>) connection -> connection.info());
@@ -82,7 +82,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "获取缓存名称列表")
     @GetMapping("/getNames")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult cache()
     {
         return AjaxResult.success(caches);
@@ -91,7 +91,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "获取缓存键名列表")
     @GetMapping("/getKeys/{cacheName}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getCacheKeys(@Parameter(description = "缓存名称", required = true, example = "login_tokens") @PathVariable String cacheName)
     {
         Set<String> cacheKeys = redisTemplate.keys(cacheName + "*");
@@ -101,7 +101,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "获取缓存内容")
     @GetMapping("/getValue/{cacheName}/{cacheKey}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getCacheValue(@Parameter(description = "缓存名称", required = true, example = "login_tokens") @PathVariable String cacheName,
             @Parameter(description = "缓存键名", required = true, example = "abc123") @PathVariable String cacheKey)
     {
@@ -113,7 +113,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "清理指定缓存名称")
     @DeleteMapping("/clearCacheName/{cacheName}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clearCacheName(@Parameter(description = "缓存名称", required = true, example = "login_tokens") @PathVariable String cacheName)
     {
         Collection<String> cacheKeys = redisTemplate.keys(cacheName + "*");
@@ -124,7 +124,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "清理指定缓存键名")
     @DeleteMapping("/clearCacheKey/{cacheKey}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clearCacheKey(@Parameter(description = "缓存键名", required = true, example = "abc123") @PathVariable String cacheKey)
     {
         redisTemplate.delete(cacheKey);
@@ -134,7 +134,7 @@ public class CacheController
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
     @Operation(summary = "清空全部缓存")
     @DeleteMapping("/clearCacheAll")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clearCacheAll()
     {
         Collection<String> cacheKeys = redisTemplate.keys("*");

@@ -48,7 +48,7 @@ public class SysDeptController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dept:list')")
     @Operation(summary = "查询部门列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult list(@Parameter(description = "部门查询条件", required = false) SysDept dept)
     {
         List<SysDept> depts = deptService.selectDeptList(dept);
@@ -61,7 +61,7 @@ public class SysDeptController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dept:list')")
     @Operation(summary = "查询排除指定节点的部门列表")
     @GetMapping("/list/exclude/{deptId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult excludeChild(@Parameter(description = "排除的部门编号", required = true, example = "1") @PathVariable(value = "deptId", required = false) Long deptId)
     {
         List<SysDept> depts = deptService.selectDeptList(new SysDept());
@@ -75,7 +75,7 @@ public class SysDeptController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dept:query')")
     @Operation(summary = "获取部门详细信息")
     @GetMapping(value = "/{deptId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "部门编号", required = true, example = "1") @PathVariable Long deptId)
     {
         deptService.checkDeptDataScope(deptId);
@@ -89,7 +89,7 @@ public class SysDeptController extends BaseController
     @Log(title = "部门管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增部门")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增部门", required = true) @RequestBody SysDept dept)
     {
         if (!deptService.checkDeptNameUnique(dept))
@@ -107,7 +107,7 @@ public class SysDeptController extends BaseController
     @Log(title = "部门管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改部门")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改部门", required = true) @RequestBody SysDept dept)
     {
         Long deptId = dept.getDeptId();
@@ -135,7 +135,7 @@ public class SysDeptController extends BaseController
     @Log(title = "保存部门排序", businessType = BusinessType.UPDATE)
     @Operation(summary = "更新部门排序")
     @PutMapping("/updateSort")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult updateSort(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "部门排序参数", required = true) @RequestBody Map<String, String> params)
     {
         String[] deptIds = params.get("deptIds").split(",");
@@ -151,7 +151,7 @@ public class SysDeptController extends BaseController
     @Log(title = "部门管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除部门")
     @DeleteMapping("/{deptId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "部门编号", required = true, example = "1") @PathVariable Long deptId)
     {
         if (deptService.hasChildByDeptId(deptId))

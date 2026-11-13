@@ -47,7 +47,7 @@ public class SysMenuController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:menu:list')")
     @Operation(summary = "查询菜单列表")
     @GetMapping("/list")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult list(@Parameter(description = "菜单查询条件", required = false) SysMenu menu)
     {
         List<SysMenu> menus = menuService.selectMenuList(menu, getUserId());
@@ -60,7 +60,7 @@ public class SysMenuController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:menu:query')")
     @Operation(summary = "获取菜单详细信息")
     @GetMapping(value = "/{menuId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo(@Parameter(description = "菜单编号", required = true, example = "1") @PathVariable Long menuId)
     {
         return success(menuService.selectMenuById(menuId));
@@ -71,7 +71,7 @@ public class SysMenuController extends BaseController
      */
     @Operation(summary = "获取菜单下拉树")
     @GetMapping("/treeselect")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult treeselect(@Parameter(description = "菜单查询条件", required = false) SysMenu menu)
     {
         List<SysMenu> menus = menuService.selectMenuList(menu, getUserId());
@@ -83,7 +83,7 @@ public class SysMenuController extends BaseController
      */
     @Operation(summary = "获取角色菜单树")
     @GetMapping(value = "/roleMenuTreeselect/{roleId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult roleMenuTreeselect(@Parameter(description = "角色编号", required = true, example = "1") @PathVariable("roleId") Long roleId)
     {
         List<SysMenu> menus = menuService.selectMenuList(getUserId());
@@ -100,7 +100,7 @@ public class SysMenuController extends BaseController
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增菜单")
     @PostMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增菜单", required = true) @RequestBody SysMenu menu)
     {
         if (!menuService.checkMenuNameUnique(menu))
@@ -126,7 +126,7 @@ public class SysMenuController extends BaseController
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改菜单")
     @PutMapping
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改菜单", required = true) @RequestBody SysMenu menu)
     {
         if (!menuService.checkMenuNameUnique(menu))
@@ -156,7 +156,7 @@ public class SysMenuController extends BaseController
     @Log(title = "保存菜单排序", businessType = BusinessType.UPDATE)
     @Operation(summary = "更新菜单排序")
     @PutMapping("/updateSort")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult updateSort(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "菜单排序参数", required = true) @RequestBody Map<String, String> params)
     {
         String[] menuIds = params.get("menuIds").split(",");
@@ -172,7 +172,7 @@ public class SysMenuController extends BaseController
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除菜单")
     @DeleteMapping("/{menuId}")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult remove(@Parameter(description = "菜单编号", required = true, example = "1") @PathVariable("menuId") Long menuId)
     {
         if (menuService.hasChildByMenuId(menuId))

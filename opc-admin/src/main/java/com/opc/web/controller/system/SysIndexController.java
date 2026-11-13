@@ -51,7 +51,7 @@ public class SysIndexController
      */
     @PostMapping("/unlockscreen")
     @Operation(summary = "解锁屏幕")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult unlockScreen(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "解锁屏幕凭据", required = true) @RequestBody Map<String, String> body)
     {
         String password = body.get("password");

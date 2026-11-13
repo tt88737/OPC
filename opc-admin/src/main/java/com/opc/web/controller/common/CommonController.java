@@ -83,8 +83,8 @@ public class CommonController
      * 通用上传请求（单个）
      */
     @PostMapping("/upload")
-    @Operation(summary = "上传单个文件")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @Operation(summary = "上传单个文件", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "待上传的文件", required = true, content = @Content(mediaType = "multipart/form-data")))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult uploadFile(@Parameter(description = "待上传的文件", required = true, content = @Content(mediaType = "multipart/form-data")) MultipartFile file) throws Exception
     {
         try
@@ -111,8 +111,8 @@ public class CommonController
      * 通用上传请求（多个）
      */
     @PostMapping("/uploads")
-    @Operation(summary = "批量上传文件")
-    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    @Operation(summary = "批量上传文件", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "待上传的文件列表", required = true, content = @Content(mediaType = "multipart/form-data")))
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult uploadFiles(@Parameter(description = "待上传的文件列表", required = true, content = @Content(mediaType = "multipart/form-data")) List<MultipartFile> files) throws Exception
     {
         try

@@ -12,6 +12,7 @@ import com.opc.common.exception.user.CaptchaException;
 import com.opc.common.exception.user.CaptchaExpireException;
 import com.opc.common.utils.DateUtils;
 import com.opc.common.utils.MessageUtils;
+import com.opc.common.utils.PasswordUtils;
 import com.opc.common.utils.SecurityUtils;
 import com.opc.common.utils.StringUtils;
 import com.opc.framework.manager.AsyncManager;
@@ -65,10 +66,9 @@ public class SysRegisterService
         {
             msg = "账户长度必须在2到20个字符之间";
         }
-        else if (password.length() < UserConstants.PASSWORD_MIN_LENGTH
-                || password.length() > UserConstants.PASSWORD_MAX_LENGTH)
+        else if (!PasswordUtils.isWithinBounds(password, UserConstants.PASSWORD_MIN_LENGTH))
         {
-            msg = "密码长度必须在5到20个字符之间";
+            msg = "密码长度必须在5到64个字符之间，且UTF-8编码不超过72字节";
         }
         else if (!userService.checkUserNameUnique(sysUser))
         {

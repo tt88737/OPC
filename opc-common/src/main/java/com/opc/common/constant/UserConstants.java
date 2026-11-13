@@ -78,4 +78,5 @@ public class UserConstants
      */
     public static final int PASSWORD_MIN_LENGTH = 5;
     public static final int PASSWORD_MAX_LENGTH = 64;
+    public static final int PASSWORD_MAX_BYTES = 72;
 }

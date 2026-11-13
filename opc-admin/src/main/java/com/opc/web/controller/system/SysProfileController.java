@@ -18,12 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.opc.common.annotation.Log;
 import com.opc.common.config.OPCConfig;
+import com.opc.common.constant.UserConstants;
 import com.opc.common.core.controller.BaseController;
 import com.opc.common.core.domain.AjaxResult;
 import com.opc.common.core.domain.entity.SysUser;
 import com.opc.common.core.domain.model.LoginUser;
 import com.opc.common.enums.BusinessType;
 import com.opc.common.utils.DateUtils;
+import com.opc.common.utils.PasswordUtils;
 import com.opc.common.utils.SecurityUtils;
 import com.opc.common.utils.StringUtils;
 import com.opc.common.utils.file.FileUploadUtils;
@@ -107,6 +109,10 @@ public class SysProfileController extends BaseController
     {
         String oldPassword = params.get("oldPassword");
         String newPassword = params.get("newPassword");
+        if (!PasswordUtils.isWithinBounds(newPassword, UserConstants.PASSWORD_MIN_LENGTH))
+        {
+            return error("密码长度必须在5到64个字符之间，且UTF-8编码不超过72字节");
+        }
         LoginUser loginUser = getLoginUser();
         Long userId = loginUser.getUserId();
         SysUser user = userService.selectUserById(userId);

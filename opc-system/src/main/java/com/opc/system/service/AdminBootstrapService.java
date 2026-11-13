@@ -1,7 +1,5 @@
 package com.opc.system.service;
 
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -9,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.opc.common.core.domain.entity.SysUser;
+import com.opc.common.utils.PasswordUtils;
 import com.opc.system.mapper.SysUserMapper;
 
 @Service
@@ -64,9 +63,7 @@ public class AdminBootstrapService
 
     private boolean isStrongPassword(String password)
     {
-        int characterCount = password.codePointCount(0, password.length());
-        if (characterCount < 12 || characterCount > 64
-                || password.getBytes(StandardCharsets.UTF_8).length > 72)
+        if (!PasswordUtils.isWithinBounds(password, 12))
         {
             return false;
         }

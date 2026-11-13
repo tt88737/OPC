@@ -97,6 +97,10 @@ public class SecurityUtils
      */
     public static String encryptPassword(String password)
     {
+        if (!PasswordUtils.isBcryptCompatible(password))
+        {
+            throw new IllegalArgumentException("Password exceeds the supported BCrypt length");
+        }
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         return passwordEncoder.encode(password);
     }
@@ -110,6 +114,10 @@ public class SecurityUtils
      */
     public static boolean matchesPassword(String rawPassword, String encodedPassword)
     {
+        if (!PasswordUtils.isBcryptCompatible(rawPassword))
+        {
+            return false;
+        }
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }

@@ -9,6 +9,20 @@ try {
         throw "$lockFile does not exist"
     }
 
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & git ls-files --error-unmatch -- $lockFile 2>$null | Out-Null
+        $trackedExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($trackedExitCode -ne 0) {
+        $notTrackedMessage = '{0}{1}{2}' -f ([char]0x672A), ([char]0x7EB3), ([char]0x7BA1)
+        throw "$lockFile $notTrackedMessage"
+    }
+
     & git check-ignore --no-index --quiet -- $lockFile
     if ($LASTEXITCODE -eq 0) {
         throw "$lockFile is ignored by .gitignore"

@@ -65,6 +65,9 @@ public class SecurityConfig
     @Value("${springdoc.swagger-ui.enabled:false}")
     private boolean swaggerUiEnabled;
 
+    @Value("${spring.datasource.druid.stat-view-servlet.enabled:false}")
+    private boolean druidConsoleEnabled;
+
 	/**
 	 * 身份验证实现
 	 */
@@ -114,8 +117,12 @@ public class SecurityConfig
                 {
                     requests.requestMatchers("/v3/api-docs/**").permitAll();
                 }
+                if (druidConsoleEnabled)
+                {
+                    requests.requestMatchers("/druid/**").permitAll();
+                }
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
-                requests.requestMatchers("/login", "/register", "/captchaImage", "/druid/**",
+                requests.requestMatchers("/login", "/register", "/captchaImage",
                         "/actuator/health", "/actuator/health/**").permitAll()
                     // 静态资源，可匿名访问
                     .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/profile/**").permitAll()

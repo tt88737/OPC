@@ -2,6 +2,7 @@ package com.opc.web.core.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.URI;
@@ -51,6 +52,27 @@ class SwaggerExposureIntegrationTest
     @Nested
     @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
             properties = {
+                    "spring.profiles.active=dev",
+                    "token.secret=druid-test-secret",
+                    "spring.datasource.druid.stat-view-servlet.enabled=true",
+                    "spring.datasource.druid.stat-view-servlet.login-username=test-user",
+                    "spring.datasource.druid.stat-view-servlet.login-password=test-password"
+            })
+    class DruidEnabled
+    {
+        @LocalServerPort
+        private int port;
+
+        @Test
+        void permitsAnonymousRequestsToEnabledDruidConsole() throws Exception
+        {
+            assertNotEquals(401, get(port, "/druid/index.html").statusCode());
+        }
+    }
+
+    @Nested
+    @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+            properties = {
                     "spring.profiles.active=prod",
                     "token.secret=swagger-test-secret",
                     "cors.allowed-origins=http://localhost",
@@ -68,6 +90,16 @@ class SwaggerExposureIntegrationTest
             assertNotEquals(200, get(port, "/swagger-ui/index.html").statusCode());
             assertNotEquals(200, get(port, "/swagger-ui.html").statusCode());
             assertNotEquals(200, get(port, "/v3/api-docs").statusCode());
+        }
+
+        @Test
+        void protectsDisabledDruidConsole() throws Exception
+        {
+            HttpResponse<String> response = get(port, "/druid/index.html");
+
+            assertEquals(401, response.statusCode());
+            assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"));
+            assertTrue(response.body().contains("\"code\":401"));
         }
     }
 

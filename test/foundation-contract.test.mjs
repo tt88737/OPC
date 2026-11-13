@@ -3,12 +3,27 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import test from 'node:test'
 
 const rootUrl = new URL('../', import.meta.url)
+const powerShellExecutable = process.platform === 'win32' ? 'powershell.exe' : 'pwsh'
+const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url))
+const { parse: parseYaml } = requireFromFrontend('yaml')
+
+const PINNED_ACTIONS = {
+  'actions/checkout': { sha: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7.0.1' },
+  'actions/setup-java': { sha: '77dd5b2ce225ea11469928ac317850245a74ae78', version: 'v6.2.0' },
+  'actions/setup-node': { sha: '949feb2413d6458794dcd2491c4babbbce0c15c1', version: 'v7.1.0' },
+  'actions/upload-artifact': { sha: 'cf430e030ddbb5b0abf93d22962f4752f3646cd9', version: 'v7.0.2' }
+}
 
 async function repositoryFile(path) {
   return readFile(new URL(path, rootUrl), 'utf8')
+}
+
+async function repositoryYaml(path) {
+  return parseYaml(await repositoryFile(path))
 }
 
 test('foundation verifier runs required fail-fast stages in order', async () => {
@@ -36,6 +51,25 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /exit\s+\$stageExitCode/)
 })
 
+test('foundation verifier propagates a failing child exit code', async () => {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-foundation-exit-'))
+  try {
+    await mkdir(join(fixtureRoot, 'bin'))
+    await copyFile(new URL('../bin/verify-foundation.ps1', import.meta.url), join(fixtureRoot, 'bin', 'verify-foundation.ps1'))
+    await writeFile(join(fixtureRoot, 'bin', 'verify-repository.ps1'), 'exit 23\n', 'utf8')
+
+    const result = spawnSync(powerShellExecutable, [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', join(fixtureRoot, 'bin', 'verify-foundation.ps1')
+    ], { cwd: tmpdir(), encoding: 'utf8' })
+
+    assert.equal(result.status, 23, result.stderr || result.stdout)
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true })
+  }
+})
+
 async function runFoundationCleanWithLogFixtures(fileNames) {
   const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-foundation-clean-'))
   try {
@@ -50,7 +84,7 @@ async function runFoundationCleanWithLogFixtures(fileNames) {
       await writeFile(filePath, `${['admin', '123'].join('')}\n`, 'utf8')
     }
 
-    return spawnSync('powershell.exe', [
+    return spawnSync(powerShellExecutable, [
       '-NoProfile',
       '-ExecutionPolicy', 'Bypass',
       '-File', join(fixtureRoot, 'bin', 'verify-foundation-clean.ps1')
@@ -79,15 +113,28 @@ test('foundation residue scan still inspects non-log files under logs', async ()
 
 test('CI uses Java 17 and a supported Node 24 release', async () => {
   const workflow = await repositoryFile('.github/workflows/ci.yml')
+  const document = parseYaml(workflow)
 
   assert.match(workflow, /java-version:\s*['"]?17/)
   assert.match(workflow, /cache:\s*['"]?maven/)
   assert.match(workflow, /node-version:\s*['"]?24/)
   assert.match(workflow, /verify-foundation\.ps1/)
+  assert.match(workflow, /persist-credentials:\s*false/)
+  assert.doesNotMatch(workflow, /uses:\s*actions\/[^@\s]+@v\d/)
+  for (const [action, pin] of Object.entries(PINNED_ACTIONS).filter(([name]) => name !== 'actions/upload-artifact')) {
+    assert.match(workflow, new RegExp(`uses:\\s*${action.replace('/', '\\/')}@${pin.sha}\\s+# ${pin.version}`))
+  }
+  assert.deepEqual(document.permissions, { contents: 'read' })
+  assert.equal(document.jobs.verify.permissions, undefined)
+  const checkout = document.jobs.verify.steps.find(step => step.uses?.startsWith('actions/checkout@'))
+  assert.equal(checkout.with['persist-credentials'], false)
+  assert.ok(Object.hasOwn(document.on, 'push'))
+  assert.ok(Object.hasOwn(document.on, 'pull_request'))
 })
 
 test('dependency scan fails at CVSS 7 and always uploads HTML and JSON reports', async () => {
   const workflow = await repositoryFile('.github/workflows/dependency-check.yml')
+  const document = parseYaml(workflow)
   const pom = await repositoryFile('pom.xml')
 
   assert.match(workflow, /workflow_dispatch:/)
@@ -100,9 +147,33 @@ test('dependency scan fails at CVSS 7 and always uploads HTML and JSON reports',
   assert.match(workflow, /npm audit --audit-level=high/)
   assert.match(workflow, /dependencies\.Count -eq 0/)
   assert.match(workflow, /steps\.maven_scan\.outcome != 'success'/)
+  assert.match(workflow, /persist-credentials:\s*false/)
+  assert.doesNotMatch(workflow, /uses:\s*actions\/[^@\s]+@v\d/)
+  for (const [action, pin] of Object.entries(PINNED_ACTIONS)) {
+    assert.match(workflow, new RegExp(`uses:\\s*${action.replace('/', '\\/')}@${pin.sha}\\s+# ${pin.version}`))
+  }
+  assert.deepEqual(document.permissions, { contents: 'read' })
+  assert.equal(document.jobs.scan.permissions, undefined)
+  const checkout = document.jobs.scan.steps.find(step => step.uses?.startsWith('actions/checkout@'))
+  assert.equal(checkout.with['persist-credentials'], false)
+  assert.ok(Object.hasOwn(document.on, 'workflow_dispatch'))
+  assert.ok(Array.isArray(document.on.schedule))
   assert.match(pom, /<id>dependency-check<\/id>/)
   assert.match(pom, /<failBuildOnCVSS>7<\/failBuildOnCVSS>/)
   assert.match(pom, /<failOnError>true<\/failOnError>/)
   assert.match(pom, /<nvdApiKeyEnvironmentVariable>NVD_API_KEY<\/nvdApiKeyEnvironmentVariable>/)
   assert.match(pom, /<formats>[\s\S]*<format>HTML<\/format>[\s\S]*<format>JSON<\/format>[\s\S]*<\/formats>/)
+})
+
+test('Dependabot maintains pinned GitHub Actions weekly', async () => {
+  const dependabot = await repositoryFile('.github/dependabot.yml')
+  const document = await repositoryYaml('.github/dependabot.yml')
+
+  assert.match(dependabot, /package-ecosystem:\s*["']?github-actions/)
+  assert.match(dependabot, /directory:\s*["']?\/["']?/)
+  assert.match(dependabot, /interval:\s*["']?weekly/)
+  assert.equal(document.version, 2)
+  const githubActions = document.updates.find(update => update['package-ecosystem'] === 'github-actions')
+  assert.equal(githubActions.directory, '/')
+  assert.equal(githubActions.schedule.interval, 'weekly')
 })

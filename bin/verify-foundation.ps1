@@ -25,7 +25,6 @@ try {
     Invoke-FoundationStage 'verify-repository.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-repository.ps1')
     }
-    Invoke-FoundationStage 'foundation contract tests' { & node --test test/foundation-contract.test.mjs }
     Invoke-FoundationStage 'verify-foundation-clean.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-foundation-clean.ps1')
     }
@@ -40,6 +39,9 @@ try {
     Push-Location (Join-Path $repoRoot 'frontend')
     try {
         Invoke-FoundationStage 'npm ci' { & npm ci }
+        Invoke-FoundationStage 'foundation contract tests' {
+            & node --test (Join-Path $repoRoot 'test/foundation-contract.test.mjs')
+        }
         Invoke-FoundationStage 'npm test' { & npm test }
         Invoke-FoundationStage 'npm run build:prod' { & npm run build:prod }
         Invoke-FoundationStage 'npm audit --audit-level=high' { & npm audit --audit-level=high }

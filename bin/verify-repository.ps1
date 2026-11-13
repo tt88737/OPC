@@ -10,6 +10,7 @@ try {
         'frontend/test/passwordPolicy.test.js'
         'test/foundation-contract.test.mjs'
         'bin/verify-foundation.ps1'
+        '.github/dependabot.yml'
         '.github/workflows/ci.yml'
         '.github/workflows/dependency-check.yml'
     )

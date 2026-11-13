@@ -68,6 +68,9 @@ public interface SysUserMapper
      */
     public int updateUser(SysUser user);
 
+    public int initializeAdminPassword(@Param("expectedPassword") String expectedPassword,
+            @Param("newPassword") String newPassword);
+
     /**
      * 修改用户头像
      *

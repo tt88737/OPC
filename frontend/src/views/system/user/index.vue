@@ -208,7 +208,6 @@ const title = ref("")
 const dateRange = ref([])
 const deptOptions = ref(undefined)
 const enabledDeptOptions = ref(undefined)
-const initPassword = ref(undefined)
 const postOptions = ref([])
 const roleOptions = ref([])
 // 列显隐信息
@@ -408,7 +407,6 @@ function handleAdd() {
     roleOptions.value = response.roles
     open.value = true
     title.value = "添加用户"
-    form.value.password = initPassword.value
   })
 }
 
@@ -452,8 +450,5 @@ function submitForm() {
 onMounted(() => {
   getDeptTree()
   getList()
-  proxy.getConfigKey("sys.user.initPassword").then(response => {
-    initPassword.value = response.msg
-  })
 })
 </script>

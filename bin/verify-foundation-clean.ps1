@@ -61,7 +61,39 @@ if ($scanExitCode -eq 0) {
 }
 
 if ($scanExitCode -eq 1) {
-    Write-Output 'Foundation residue check passed.'
+    $credentialPatterns = @(
+        'sys\.user\.initPassword',
+        '(?<![0-9])123456(?![0-9])',
+        '\$2a\$10\$7JB720yubVSZvUI0rEqK/\.VqGOZTH\.ulu33dHOiBE8ByOhJIrdAu2'
+    )
+    $credentialRoots = @('sql', 'frontend/src')
+    $credentialRoots += Get-ChildItem -Directory -Filter 'opc-*' |
+        ForEach-Object { Join-Path $_.FullName 'src' } |
+        Where-Object { Test-Path $_ }
+    & rg --line-number --pcre2 --hidden --glob '!**/target/**' --regexp ($credentialPatterns -join '|') @credentialRoots
+    $credentialScanExitCode = $LASTEXITCODE
+    if ($credentialScanExitCode -eq 0) {
+        Write-Output 'Foundation credential check failed: shared password configuration, weak default, or legacy password hash found.'
+        exit 1
+    }
+    if ($credentialScanExitCode -ne 1) {
+        Write-Output "Foundation credential scan failed to execute. rg exit code: $credentialScanExitCode"
+        exit $credentialScanExitCode
+    }
+    $placeholderHash = '$2a$10$G/SUvAekkFytyaaBYNX0a.1S1aQmkvX8W5A6LvRG9j1lFjPqvpghG'
+    $fixedHashMatches = @(& rg --line-number --hidden --glob '!**/target/**' '\$2[aby]\$[0-9]{2}\$' @credentialRoots)
+    $fixedHashScanExitCode = $LASTEXITCODE
+    if ($fixedHashScanExitCode -gt 1) {
+        Write-Output "Foundation password hash scan failed to execute. rg exit code: $fixedHashScanExitCode"
+        exit $fixedHashScanExitCode
+    }
+    $unexpectedHashMatches = @($fixedHashMatches | Where-Object { $_ -notlike "*$placeholderHash*" })
+    if ($unexpectedHashMatches.Count -gt 0) {
+        $unexpectedHashMatches | Write-Output
+        Write-Output 'Foundation credential check failed: fixed password hash found outside the bootstrap placeholder.'
+        exit 1
+    }
+    Write-Output 'Foundation residue and credential checks passed.'
     exit 0
 }
 

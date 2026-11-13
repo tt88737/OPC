@@ -1,6 +1,8 @@
 package com.opc.system.service.impl;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +30,6 @@ import com.opc.system.mapper.SysRoleMapper;
 import com.opc.system.mapper.SysUserMapper;
 import com.opc.system.mapper.SysUserPostMapper;
 import com.opc.system.mapper.SysUserRoleMapper;
-import com.opc.system.service.ISysConfigService;
 import com.opc.system.service.ISysDeptService;
 import com.opc.system.service.ISysUserService;
 
@@ -41,6 +42,7 @@ import com.opc.system.service.ISysUserService;
 public class SysUserServiceImpl implements ISysUserService
 {
     private static final Logger log = LoggerFactory.getLogger(SysUserServiceImpl.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Autowired
     private SysUserMapper userMapper;
@@ -56,9 +58,6 @@ public class SysUserServiceImpl implements ISysUserService
 
     @Autowired
     private SysUserPostMapper userPostMapper;
-
-    @Autowired
-    private ISysConfigService configService;
 
     @Autowired
     private ISysDeptService deptService;
@@ -517,8 +516,11 @@ public class SysUserServiceImpl implements ISysUserService
                 {
                     BeanValidators.validateWithException(validator, user);
                     deptService.checkDeptDataScope(user.getDeptId());
-                    String password = configService.selectConfigByKey("sys.user.initPassword");
-                    user.setPassword(SecurityUtils.encryptPassword(password));
+                    byte[] randomPassword = new byte[32];
+                    SECURE_RANDOM.nextBytes(randomPassword);
+                    user.setPassword(SecurityUtils.encryptPassword(
+                            Base64.getUrlEncoder().withoutPadding().encodeToString(randomPassword)));
+                    user.setStatus("1");
                     user.setCreateBy(operName);
                     userMapper.insertUser(user);
                     successNum++;
@@ -532,6 +534,8 @@ public class SysUserServiceImpl implements ISysUserService
                     deptService.checkDeptDataScope(user.getDeptId());
                     user.setUserId(u.getUserId());
                     user.setDeptId(u.getDeptId());
+                    user.setPassword(null);
+                    user.setStatus(null);
                     user.setUpdateBy(operName);
                     userMapper.updateUser(user);
                     successNum++;

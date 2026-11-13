@@ -30,6 +30,9 @@ $datasource = Read-RequiredFile (Join-Path $resourceRoot 'application-datasource
 $development = Read-RequiredFile (Join-Path $resourceRoot 'application-dev.yml')
 $production = Read-RequiredFile (Join-Path $resourceRoot 'application-prod.yml')
 $druidValidator = Read-RequiredFile (Join-Path $repoRoot 'opc-admin\src\main\java\com\opc\web\core\config\DruidConsoleCredentialsValidator.java')
+$productionValidator = Read-RequiredFile (Join-Path $repoRoot 'opc-admin\src\main\java\com\opc\web\core\config\ProductionSecurityValidator.java')
+$productionValidatorTest = Read-RequiredFile (Join-Path $repoRoot 'opc-admin\src\test\java\com\opc\web\core\config\ProductionSecurityValidatorTest.java')
+$readme = Read-RequiredFile (Join-Path $repoRoot 'README.md')
 
 if (Test-Path -LiteralPath (Join-Path $resourceRoot 'application-druid.yml')) {
     $errors.Add('Legacy application-druid.yml must be renamed to application-datasource.yml.')
@@ -69,6 +72,33 @@ Assert-Matches $production '(?ms)^\s*statViewServlet:\s*$.*?^\s*enabled:\s*false
 Assert-Matches $production '(?m)^\s{6}password:\s*\$\{OPC_REDIS_PASSWORD\}\s*$' 'prod Redis must use OPC_REDIS_PASSWORD without a default.'
 Assert-Matches $production '(?m)^\s{2}allowed-origins:\s*\$\{OPC_CORS_ALLOWED_ORIGINS\}\s*$' 'prod CORS must use OPC_CORS_ALLOWED_ORIGINS without a default.'
 Assert-NotMatches $production 'OPC_(SPRINGDOC|DRUID|DEVTOOLS)_ENABLED' 'prod Swagger, Druid, and DevTools must not be enabled by environment toggles.'
+
+Assert-Matches $productionValidator '@Profile\("prod"\)' 'Production security validation must be restricted to the prod profile.'
+Assert-Matches $productionValidator 'Environment\s+environment' 'Production security validation must inspect the final Spring Environment.'
+Assert-Matches $productionValidator 'environment\.getProperty\(propertyName,\s*Boolean\.class,\s*false\)' 'Production security validation must reject final true feature toggles.'
+Assert-Matches $productionValidator '!StringUtils\.hasText\(environment\.getProperty\(propertyName\)\)' 'Production security validation must reject missing and blank required properties.'
+
+$protectedProductionProperties = @(
+    'springdoc.api-docs.enabled',
+    'springdoc.swagger-ui.enabled',
+    'spring.devtools.restart.enabled',
+    'spring.datasource.druid.web-stat-filter.enabled',
+    'spring.datasource.druid.stat-view-servlet.enabled',
+    'spring.datasource.druid.master.url',
+    'spring.datasource.druid.master.username',
+    'spring.datasource.druid.master.password',
+    'spring.data.redis.password',
+    'token.secret',
+    'cors.allowed-origins'
+)
+foreach ($propertyName in $protectedProductionProperties) {
+    Assert-Matches $productionValidator ([regex]::Escape('"' + $propertyName + '"')) "Production validator does not cover $propertyName."
+}
+
+Assert-Matches $productionValidatorTest 'ApplicationContextRunner' 'Production security tests must use ApplicationContextRunner.'
+Assert-Matches $productionValidatorTest 'MapPropertySource\("application-prod\.yml"' 'Production security tests must model lower-priority prod file properties.'
+Assert-Matches $productionValidatorTest '\.withSystemProperties\(properties\)' 'Production security tests must probe higher-priority system properties.'
+Assert-Matches $readme '(?m)^mvn clean package\s*$' 'README must use mvn clean package to prevent stale resources.'
 
 if ($errors.Count -gt 0) {
     foreach ($errorMessage in $errors) {

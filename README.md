@@ -32,8 +32,10 @@ OPC/
 4. 使用 Java 17 和 Maven 构建：
 
 ```bash
-mvn -DskipTests package
+mvn clean package
 ```
+
+其中 `clean` 会先删除上次构建输出，避免已删除或已改名的配置资源残留在 `target` 和最终 JAR 中。
 
 5. 启动 `opc-admin/target/opc-admin.jar`，默认端口为 `8080`。
 

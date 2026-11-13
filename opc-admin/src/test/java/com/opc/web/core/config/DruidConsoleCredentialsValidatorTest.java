@@ -12,7 +12,7 @@ class DruidConsoleCredentialsValidatorTest
 {
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = { " ", "\t" })
+    @ValueSource(strings = { " ", "\t", "\u00a0", "\u202f" })
     void rejectsBlankUsername(String username)
     {
         assertThrows(IllegalStateException.class,
@@ -21,7 +21,7 @@ class DruidConsoleCredentialsValidatorTest
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = { " ", "\t" })
+    @ValueSource(strings = { " ", "\t", "\u00a0", "\u202f" })
     void rejectsBlankPassword(String password)
     {
         assertThrows(IllegalStateException.class,
@@ -31,6 +31,6 @@ class DruidConsoleCredentialsValidatorTest
     @Test
     void acceptsInjectedCredentials()
     {
-        assertDoesNotThrow(() -> new DruidConsoleCredentialsValidator("druid-operator", "strong-console-password"));
+        assertDoesNotThrow(() -> new DruidConsoleCredentialsValidator("\u8fd0\u7ef4", "\u5f3a\u5bc6\u7801"));
     }
 }

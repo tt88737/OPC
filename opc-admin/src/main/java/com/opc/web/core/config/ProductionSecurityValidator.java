@@ -46,7 +46,7 @@ public class ProductionSecurityValidator implements InitializingBean
         }
         for (String propertyName : REQUIRED_PROPERTIES)
         {
-            if (!hasNonWhitespaceCodePoint(environment.getProperty(propertyName)))
+            if (!UnicodeText.hasVisibleText(environment.getProperty(propertyName)))
             {
                 violations.add(propertyName);
             }
@@ -58,9 +58,4 @@ public class ProductionSecurityValidator implements InitializingBean
         }
     }
 
-    private boolean hasNonWhitespaceCodePoint(String value)
-    {
-        return value != null && value.codePoints()
-                .anyMatch(codePoint -> !Character.isWhitespace(codePoint) && !Character.isSpaceChar(codePoint));
-    }
 }

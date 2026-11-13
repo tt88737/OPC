@@ -167,8 +167,8 @@
                            <el-tooltip placement="top">
                               <template #content>
                                  <div>
-                                    Bean调用示例：ryTask.ryParams('ry')
-                                    <br />Class类调用示例：com.opc.quartz.task.RyTask.ryParams('ry')
+                                    Bean调用格式：Bean名称.方法名('参数')
+                                    <br />Class类调用格式：完整类名.方法名('参数')
                                     <br />参数说明：支持字符串，布尔类型，长整型，浮点型，整型
                                  </div>
                               </template>

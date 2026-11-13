@@ -244,6 +244,18 @@ function Test-SpringInternalParameter([string]$ParameterText) {
         $type -match '(?:^|[<, ])(?:HttpServletRequest|HttpServletResponse|ServletRequest|ServletResponse|HttpSession|WebRequest|NativeWebRequest|ServletWebRequest|Principal|Authentication|SecurityContext|Model|ModelMap|RedirectAttributes|BindingResult|Errors|SessionStatus|UriComponentsBuilder|Locale|TimeZone|ZoneId|HttpHeaders|PushBuilder|ServletContext|WebDataBinder|InputStream|OutputStream|Reader|Writer|HttpMethod)$'
 }
 
+function Test-ChineseOpenApiParameter([string]$ParameterText) {
+    $annotation = [regex]::Match($ParameterText, '@Parameter\s*\((?<arguments>[^)]*)\)')
+    if (-not $annotation.Success) { return $false }
+    return $annotation.Groups['arguments'].Value -match 'description\s*=\s*"[^"]*' + $chinesePattern + '[^"]*"'
+}
+
+function Test-ChineseOpenApiRequestBody([string]$ParameterText) {
+    $annotation = [regex]::Match($ParameterText, '@(?:io\.swagger\.v3\.oas\.annotations\.parameters\.)?RequestBody\s*\((?<arguments>[^)]*)\)')
+    if (-not $annotation.Success) { return $false }
+    return $annotation.Groups['arguments'].Value -match 'description\s*=\s*"[^"]*' + $chinesePattern + '[^"]*"'
+}
+
 Test-CommonResponseModels $repoRoot $errors
 
 foreach ($file in $files) {
@@ -289,6 +301,7 @@ foreach ($file in $files) {
         $nextDeclaration = $lines.Length
         $declarationType = ''
         $methodStart = -1
+        $publicInstanceMethod = $false
         $signature = New-Object System.Collections.Generic.List[string]
         for ($i = $mapping.End + 1; $i -lt $maskedLines.Length; $i++) {
             if ($maskedLines[$i] -match '^\s*(?:(?:public|abstract|final)\s+)*class\s+(?<name>[\w$]+)\b') {
@@ -309,6 +322,7 @@ foreach ($file in $files) {
                 $nextDeclaration = $i
                 $declarationType = 'method'
                 $methodStart = $i
+                $publicInstanceMethod = $joinedSignature -match '^\s*public\s+(?!static\b)'
                 break
             }
             if ($maskedLines[$i].Contains('{') -or $maskedLines[$i].Contains(';') -or $maskedLines[$i].Contains('}')) { break }
@@ -319,9 +333,22 @@ foreach ($file in $files) {
             continue
         }
 
-        foreach ($parameter in @(Get-MethodParameterTexts $maskedLines $methodStart)) {
-            if ($parameter -match '@Parameter\b' -or (Test-SpringInternalParameter $parameter)) { continue }
-            $errors.Add("${relativePath}:$($mapping.Start + 1): 映射方法存在未覆盖的请求参数：$($parameter.Trim())（请添加带中文 description 的 @Parameter）")
+        if ($publicInstanceMethod) {
+            foreach ($parameter in @(Get-MethodParameterTexts $maskedLines $methodStart)) {
+                if (Test-SpringInternalParameter $parameter) { continue }
+                $isRequestBody = $parameter -match '@RequestBody\b'
+                if ($isRequestBody) {
+                    if (-not (Test-ChineseOpenApiRequestBody $parameter)) {
+                        $errors.Add("${relativePath}:$($mapping.Start + 1): @RequestBody 参数缺少带中文 description 的 OpenAPI RequestBody")
+                    }
+                    continue
+                }
+                if (-not ($parameter -match '@Parameter\b')) {
+                    $errors.Add("${relativePath}:$($mapping.Start + 1): 映射方法存在未覆盖的请求参数：$($parameter.Trim())（请添加带中文 description 的 @Parameter）")
+                } elseif (-not (Test-ChineseOpenApiParameter $parameter)) {
+                    $errors.Add("${relativePath}:$($mapping.Start + 1): @Parameter 缺少包含中文的 description")
+                }
+            }
         }
 
         # Include annotations contiguous on either side of the mapping annotation.

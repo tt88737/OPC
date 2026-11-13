@@ -3,6 +3,10 @@ package com.opc.web.controller.system;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,7 +63,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:list')")
     @Operation(summary = "查询角色列表")
     @GetMapping("/list")
-    public TableDataInfo list(SysRole role)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo list(@Parameter(description = "角色查询条件", required = false) SysRole role)
     {
         startPage();
         List<SysRole> list = roleService.selectRoleList(role);
@@ -70,7 +75,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:export')")
     @Operation(summary = "导出角色数据")
     @PostMapping("/export")
-    public void export(HttpServletResponse response, SysRole role)
+    @ApiResponse(responseCode = "200", description = "文件导出成功", content = @Content(mediaType = "application/octet-stream"))
+    public void export(HttpServletResponse response, @Parameter(description = "角色查询条件", required = false) SysRole role)
     {
         List<SysRole> list = roleService.selectRoleList(role);
         ExcelUtil<SysRole> util = new ExcelUtil<SysRole>(SysRole.class);
@@ -83,7 +89,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:query')")
     @Operation(summary = "获取角色详细信息")
     @GetMapping(value = "/{roleId}")
-    public AjaxResult getInfo(@PathVariable Long roleId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult getInfo(@Parameter(description = "角色编号", required = true, example = "1") @PathVariable Long roleId)
     {
         roleService.checkRoleDataScope(roleId);
         return success(roleService.selectRoleById(roleId));
@@ -96,7 +103,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增角色")
     @PostMapping
-    public AjaxResult add(@Validated @RequestBody SysRole role)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增角色", required = true) @RequestBody SysRole role)
     {
         if (!roleService.checkRoleNameUnique(role))
         {
@@ -118,7 +126,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改角色")
     @PutMapping
-    public AjaxResult edit(@Validated @RequestBody SysRole role)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改角色", required = true) @RequestBody SysRole role)
     {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -148,7 +157,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改角色数据权限")
     @PutMapping("/dataScope")
-    public AjaxResult dataScope(@RequestBody SysRole role)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult dataScope(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "角色数据权限配置", required = true) @RequestBody SysRole role)
     {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -162,7 +172,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改角色状态")
     @PutMapping("/changeStatus")
-    public AjaxResult changeStatus(@RequestBody SysRole role)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult changeStatus(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "角色状态信息", required = true) @RequestBody SysRole role)
     {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -177,7 +188,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除角色")
     @DeleteMapping("/{roleIds}")
-    public AjaxResult remove(@PathVariable Long[] roleIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult remove(@Parameter(description = "角色编号列表", required = true, example = "1,2") @PathVariable Long[] roleIds)
     {
         return toAjax(roleService.deleteRoleByIds(roleIds));
     }
@@ -188,6 +200,7 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:query')")
     @Operation(summary = "获取角色选择列表")
     @GetMapping("/optionselect")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult optionselect()
     {
         return success(roleService.selectRoleAll());
@@ -199,7 +212,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:list')")
     @Operation(summary = "查询已分配用户")
     @GetMapping("/authUser/allocatedList")
-    public TableDataInfo allocatedList(SysUser user)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo allocatedList(@Parameter(description = "已分配用户查询条件", required = false) SysUser user)
     {
         startPage();
         List<SysUser> list = userService.selectAllocatedList(user);
@@ -212,7 +226,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:list')")
     @Operation(summary = "查询未分配用户")
     @GetMapping("/authUser/unallocatedList")
-    public TableDataInfo unallocatedList(SysUser user)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo unallocatedList(@Parameter(description = "未分配用户查询条件", required = false) SysUser user)
     {
         startPage();
         List<SysUser> list = userService.selectUnallocatedList(user);
@@ -226,7 +241,8 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @Operation(summary = "取消用户角色授权")
     @PutMapping("/authUser/cancel")
-    public AjaxResult cancelAuthUser(@RequestBody SysUserRole userRole)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult cancelAuthUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "取消用户角色授权信息", required = true) @RequestBody SysUserRole userRole)
     {
         return toAjax(roleService.deleteAuthUser(userRole));
     }
@@ -238,7 +254,9 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @Operation(summary = "批量取消用户角色授权")
     @PutMapping("/authUser/cancelAll")
-    public AjaxResult cancelAuthUserAll(Long roleId, Long[] userIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult cancelAuthUserAll(@Parameter(description = "角色编号", required = true, example = "1") Long roleId,
+            @Parameter(description = "用户编号列表", required = true, example = "1,2") Long[] userIds)
     {
         return toAjax(roleService.deleteAuthUsers(roleId, userIds));
     }
@@ -250,7 +268,9 @@ public class SysRoleController extends BaseController
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @Operation(summary = "批量选择用户授权")
     @PutMapping("/authUser/selectAll")
-    public AjaxResult selectAuthUserAll(Long roleId, Long[] userIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult selectAuthUserAll(@Parameter(description = "角色编号", required = true, example = "1") Long roleId,
+            @Parameter(description = "用户编号列表", required = true, example = "1,2") Long[] userIds)
     {
         roleService.checkRoleDataScope(roleId);
         return toAjax(roleService.insertAuthUsers(roleId, userIds));
@@ -262,7 +282,8 @@ public class SysRoleController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:role:query')")
     @Operation(summary = "获取角色部门树")
     @GetMapping(value = "/deptTree/{roleId}")
-    public AjaxResult deptTree(@PathVariable("roleId") Long roleId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult deptTree(@Parameter(description = "角色编号", required = true, example = "1") @PathVariable("roleId") Long roleId)
     {
         AjaxResult ajax = AjaxResult.success();
         ajax.put("checkedKeys", deptService.selectDeptListByRoleId(roleId));

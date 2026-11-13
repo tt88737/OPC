@@ -3,6 +3,10 @@ package com.opc.web.controller.system;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,7 +47,8 @@ public class SysConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:config:list')")
     @Operation(summary = "查询参数列表")
     @GetMapping("/list")
-    public TableDataInfo list(SysConfig config)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo list(@Parameter(description = "参数配置查询条件", required = false) SysConfig config)
     {
         startPage();
         List<SysConfig> list = configService.selectConfigList(config);
@@ -54,7 +59,8 @@ public class SysConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:config:export')")
     @Operation(summary = "导出参数数据")
     @PostMapping("/export")
-    public void export(HttpServletResponse response, SysConfig config)
+    @ApiResponse(responseCode = "200", description = "文件导出成功", content = @Content(mediaType = "application/octet-stream"))
+    public void export(HttpServletResponse response, @Parameter(description = "参数配置查询条件", required = false) SysConfig config)
     {
         List<SysConfig> list = configService.selectConfigList(config);
         ExcelUtil<SysConfig> util = new ExcelUtil<SysConfig>(SysConfig.class);
@@ -67,7 +73,8 @@ public class SysConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:config:query')")
     @Operation(summary = "获取参数详细信息")
     @GetMapping(value = "/{configId}")
-    public AjaxResult getInfo(@PathVariable Long configId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult getInfo(@Parameter(description = "参数配置编号", required = true, example = "1") @PathVariable Long configId)
     {
         return success(configService.selectConfigById(configId));
     }
@@ -77,7 +84,8 @@ public class SysConfigController extends BaseController
      */
     @Operation(summary = "根据参数键名查询参数值")
     @GetMapping(value = "/configKey/{configKey}")
-    public AjaxResult getConfigKey(@PathVariable String configKey)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult getConfigKey(@Parameter(description = "参数配置键名", required = true, example = "sys.index.skinName") @PathVariable String configKey)
     {
         return success(configService.selectConfigByKey(configKey));
     }
@@ -89,7 +97,8 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @Operation(summary = "新增参数")
     @PostMapping
-    public AjaxResult add(@Validated @RequestBody SysConfig config)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增参数配置", required = true) @RequestBody SysConfig config)
     {
         if (!configService.checkConfigKeyUnique(config))
         {
@@ -106,7 +115,8 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改参数")
     @PutMapping
-    public AjaxResult edit(@Validated @RequestBody SysConfig config)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改参数配置", required = true) @RequestBody SysConfig config)
     {
         if (!configService.checkConfigKeyUnique(config))
         {
@@ -123,7 +133,8 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
     @Operation(summary = "删除参数")
     @DeleteMapping("/{configIds}")
-    public AjaxResult remove(@PathVariable Long[] configIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult remove(@Parameter(description = "参数配置编号列表", required = true, example = "1,2") @PathVariable Long[] configIds)
     {
         configService.deleteConfigByIds(configIds);
         return success();
@@ -136,6 +147,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.CLEAN)
     @Operation(summary = "刷新参数缓存")
     @DeleteMapping("/refreshCache")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult refreshCache()
     {
         configService.resetConfigCache();

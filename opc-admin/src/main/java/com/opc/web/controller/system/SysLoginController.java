@@ -4,6 +4,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,7 +62,8 @@ public class SysLoginController
      */
     @PostMapping("/login")
     @Operation(summary = "用户登录")
-    public AjaxResult login(@RequestBody LoginBody loginBody)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户登录信息", required = true) @RequestBody LoginBody loginBody)
     {
         AjaxResult ajax = AjaxResult.success();
         // 生成令牌
@@ -75,6 +80,7 @@ public class SysLoginController
      */
     @GetMapping("getInfo")
     @Operation(summary = "获取当前用户信息")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getInfo()
     {
         LoginUser loginUser = SecurityUtils.getLoginUser();
@@ -105,6 +111,7 @@ public class SysLoginController
      */
     @GetMapping("getRouters")
     @Operation(summary = "获取当前用户路由")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult getRouters()
     {
         Long userId = SecurityUtils.getUserId();

@@ -1,6 +1,10 @@
 package com.opc.web.controller.system;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +34,8 @@ public class SysRegisterController extends BaseController
 
     @PostMapping("/register")
     @Operation(summary = "注册用户")
-    public AjaxResult register(@RequestBody RegisterBody user)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult register(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户注册信息", required = true) @RequestBody RegisterBody user)
     {
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser"))))
         {

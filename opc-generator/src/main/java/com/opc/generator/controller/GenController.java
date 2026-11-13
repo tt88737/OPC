@@ -1,6 +1,10 @@
 package com.opc.generator.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +65,8 @@ public class GenController extends BaseController
     @PreAuthorize("@ss.hasPermi('tool:gen:list')")
     @Operation(summary = "查询代码生成表列表")
     @GetMapping("/list")
-    public TableDataInfo genList(GenTable genTable)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo genList(@Parameter(description = "代码生成表查询条件", required = false) GenTable genTable)
     {
         startPage();
         List<GenTable> list = genTableService.selectGenTableList(genTable);
@@ -74,7 +79,8 @@ public class GenController extends BaseController
     @PreAuthorize("@ss.hasPermi('tool:gen:query')")
     @Operation(summary = "获取代码生成表详细信息")
     @GetMapping(value = "/{tableId}")
-    public AjaxResult getInfo(@PathVariable Long tableId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult getInfo(@Parameter(description = "数据表编号", required = true, example = "1") @PathVariable Long tableId)
     {
         GenTable table = genTableService.selectGenTableById(tableId);
         List<GenTable> tables = genTableService.selectGenTableAll();
@@ -92,7 +98,8 @@ public class GenController extends BaseController
     @PreAuthorize("@ss.hasPermi('tool:gen:list')")
     @Operation(summary = "查询数据库表列表")
     @GetMapping("/db/list")
-    public TableDataInfo dataList(GenTable genTable)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo dataList(@Parameter(description = "数据库表查询条件", required = false) GenTable genTable)
     {
         startPage();
         List<GenTable> list = genTableService.selectDbTableList(genTable);
@@ -105,7 +112,8 @@ public class GenController extends BaseController
     @PreAuthorize("@ss.hasPermi('tool:gen:list')")
     @Operation(summary = "查询表字段列表")
     @GetMapping(value = "/column/{tableId}")
-    public TableDataInfo columnList(Long tableId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo columnList(@Parameter(description = "数据表编号", required = true, example = "1") Long tableId)
     {
         TableDataInfo dataInfo = new TableDataInfo();
         List<GenTableColumn> list = genTableColumnService.selectGenTableColumnListByTableId(tableId);
@@ -121,7 +129,9 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.IMPORT)
     @Operation(summary = "导入数据库表")
     @PostMapping("/importTable")
-    public AjaxResult importTableSave(@RequestParam("tables") String tables, @RequestParam("tplWebType") String tplWebType)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult importTableSave(@Parameter(description = "待导入的数据表名称", required = true, example = "sys_user") @RequestParam("tables") String tables,
+            @Parameter(description = "前端模板类型", required = true, example = "element-plus") @RequestParam("tplWebType") String tplWebType)
     {
         String[] tableNames = Convert.toStrArray(tables);
         // 查询表信息
@@ -137,7 +147,9 @@ public class GenController extends BaseController
     @Log(title = "创建表", businessType = BusinessType.OTHER)
     @Operation(summary = "创建数据库表")
     @PostMapping("/createTable")
-    public AjaxResult createTableSave(@RequestParam("sql") String sql, @RequestParam("tplWebType") String tplWebType)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult createTableSave(@Parameter(description = "建表 SQL 语句", required = true, example = "CREATE TABLE demo (id bigint)") @RequestParam("sql") String sql,
+            @Parameter(description = "前端模板类型", required = true, example = "element-plus") @RequestParam("tplWebType") String tplWebType)
     {
         try
         {
@@ -175,7 +187,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改代码生成配置")
     @PutMapping
-    public AjaxResult editSave(@Validated @RequestBody GenTable genTable)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult editSave(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "代码生成配置", required = true) @RequestBody GenTable genTable)
     {
         genTableService.validateEdit(genTable);
         genTableService.updateGenTable(genTable);
@@ -189,7 +202,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.DELETE)
     @Operation(summary = "删除代码生成表")
     @DeleteMapping("/{tableIds}")
-    public AjaxResult remove(@PathVariable Long[] tableIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult remove(@Parameter(description = "数据表编号列表", required = true, example = "1,2") @PathVariable Long[] tableIds)
     {
         genTableService.deleteGenTableByIds(tableIds);
         return success();
@@ -201,7 +215,8 @@ public class GenController extends BaseController
     @PreAuthorize("@ss.hasPermi('tool:gen:preview')")
     @Operation(summary = "预览生成代码")
     @GetMapping("/preview/{tableId}")
-    public AjaxResult preview(@PathVariable("tableId") Long tableId) throws IOException
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult preview(@Parameter(description = "数据表编号", required = true, example = "1") @PathVariable("tableId") Long tableId) throws IOException
     {
         Map<String, String> dataMap = genTableService.previewCode(tableId);
         return success(dataMap);
@@ -214,7 +229,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.GENCODE)
     @Operation(summary = "下载生成代码")
     @GetMapping("/download/{tableName}")
-    public void download(HttpServletResponse response, @PathVariable("tableName") String tableName) throws IOException
+    @ApiResponse(responseCode = "200", description = "代码下载成功", content = @Content(mediaType = "application/octet-stream"))
+    public void download(HttpServletResponse response, @Parameter(description = "数据表名称", required = true, example = "sys_user") @PathVariable("tableName") String tableName) throws IOException
     {
         byte[] data = genTableService.downloadCode(tableName);
         genCode(response, data);
@@ -227,7 +243,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.GENCODE)
     @Operation(summary = "生成代码")
     @GetMapping("/genCode/{tableName}")
-    public AjaxResult genCode(@PathVariable("tableName") String tableName)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult genCode(@Parameter(description = "数据表名称", required = true, example = "sys_user") @PathVariable("tableName") String tableName)
     {
         if (!GenConfig.isAllowOverwrite())
         {
@@ -244,7 +261,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.UPDATE)
     @Operation(summary = "同步数据库表结构")
     @GetMapping("/synchDb/{tableName}")
-    public AjaxResult synchDb(@PathVariable("tableName") String tableName)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult synchDb(@Parameter(description = "数据表名称", required = true, example = "sys_user") @PathVariable("tableName") String tableName)
     {
         genTableService.synchDb(tableName);
         return success();
@@ -257,7 +275,8 @@ public class GenController extends BaseController
     @Log(title = "代码生成", businessType = BusinessType.GENCODE)
     @Operation(summary = "批量生成代码")
     @GetMapping("/batchGenCode")
-    public void batchGenCode(HttpServletResponse response, String tables) throws IOException
+    @ApiResponse(responseCode = "200", description = "代码下载成功", content = @Content(mediaType = "application/octet-stream"))
+    public void batchGenCode(HttpServletResponse response, @Parameter(description = "数据表名称列表", required = true, example = "sys_user,sys_role") String tables) throws IOException
     {
         String[] tableNames = Convert.toStrArray(tables);
         byte[] data = genTableService.downloadCode(tableNames);

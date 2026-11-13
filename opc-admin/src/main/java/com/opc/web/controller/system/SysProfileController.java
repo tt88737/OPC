@@ -2,6 +2,10 @@ package com.opc.web.controller.system;
 
 import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +53,7 @@ public class SysProfileController extends BaseController
      */
     @Operation(summary = "获取个人信息")
     @GetMapping
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult profile()
     {
         LoginUser loginUser = getLoginUser();
@@ -65,7 +70,8 @@ public class SysProfileController extends BaseController
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人信息")
     @PutMapping
-    public AjaxResult updateProfile(@RequestBody SysUser user)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult updateProfile(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户个人资料", required = true) @RequestBody SysUser user)
     {
         LoginUser loginUser = getLoginUser();
         SysUser currentUser = loginUser.getUser();
@@ -96,7 +102,8 @@ public class SysProfileController extends BaseController
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人密码")
     @PutMapping("/updatePwd")
-    public AjaxResult updatePwd(@RequestBody Map<String, String> params)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult updatePwd(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "密码修改参数", required = true) @RequestBody Map<String, String> params)
     {
         String oldPassword = params.get("oldPassword");
         String newPassword = params.get("newPassword");
@@ -130,7 +137,8 @@ public class SysProfileController extends BaseController
     @Log(title = "用户头像", businessType = BusinessType.UPDATE)
     @Operation(summary = "上传用户头像")
     @PostMapping("/avatar")
-    public AjaxResult avatar(@RequestParam("avatarfile") MultipartFile file) throws Exception
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult avatar(@Parameter(description = "用户头像文件", required = true, content = @Content(mediaType = "multipart/form-data")) @RequestParam("avatarfile") MultipartFile file) throws Exception
     {
         if (!file.isEmpty())
         {

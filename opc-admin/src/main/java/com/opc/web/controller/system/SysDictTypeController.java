@@ -3,6 +3,10 @@ package com.opc.web.controller.system;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +44,8 @@ public class SysDictTypeController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @Operation(summary = "查询字典类型列表")
     @GetMapping("/list")
-    public TableDataInfo list(SysDictType dictType)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo list(@Parameter(description = "字典类型查询条件", required = false) SysDictType dictType)
     {
         startPage();
         List<SysDictType> list = dictTypeService.selectDictTypeList(dictType);
@@ -51,7 +56,8 @@ public class SysDictTypeController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dict:export')")
     @Operation(summary = "导出字典类型数据")
     @PostMapping("/export")
-    public void export(HttpServletResponse response, SysDictType dictType)
+    @ApiResponse(responseCode = "200", description = "文件导出成功", content = @Content(mediaType = "application/octet-stream"))
+    public void export(HttpServletResponse response, @Parameter(description = "字典类型查询条件", required = false) SysDictType dictType)
     {
         List<SysDictType> list = dictTypeService.selectDictTypeList(dictType);
         ExcelUtil<SysDictType> util = new ExcelUtil<SysDictType>(SysDictType.class);
@@ -64,7 +70,8 @@ public class SysDictTypeController extends BaseController
     @PreAuthorize("@ss.hasPermi('system:dict:query')")
     @Operation(summary = "获取字典类型详细信息")
     @GetMapping(value = "/{dictId}")
-    public AjaxResult getInfo(@PathVariable Long dictId)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult getInfo(@Parameter(description = "字典类型编号", required = true, example = "1") @PathVariable Long dictId)
     {
         return success(dictTypeService.selectDictTypeById(dictId));
     }
@@ -76,7 +83,8 @@ public class SysDictTypeController extends BaseController
     @Log(title = "字典类型", businessType = BusinessType.INSERT)
     @Operation(summary = "新增字典类型")
     @PostMapping
-    public AjaxResult add(@Validated @RequestBody SysDictType dict)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult add(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "新增字典类型", required = true) @RequestBody SysDictType dict)
     {
         if (!dictTypeService.checkDictTypeUnique(dict))
         {
@@ -93,7 +101,8 @@ public class SysDictTypeController extends BaseController
     @Log(title = "字典类型", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改字典类型")
     @PutMapping
-    public AjaxResult edit(@Validated @RequestBody SysDictType dict)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult edit(@Validated @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "修改字典类型", required = true) @RequestBody SysDictType dict)
     {
         if (!dictTypeService.checkDictTypeUnique(dict))
         {
@@ -110,7 +119,8 @@ public class SysDictTypeController extends BaseController
     @Log(title = "字典类型", businessType = BusinessType.DELETE)
     @Operation(summary = "删除字典类型")
     @DeleteMapping("/{dictIds}")
-    public AjaxResult remove(@PathVariable Long[] dictIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult remove(@Parameter(description = "字典类型编号列表", required = true, example = "1,2") @PathVariable Long[] dictIds)
     {
         dictTypeService.deleteDictTypeByIds(dictIds);
         return success();
@@ -123,6 +133,7 @@ public class SysDictTypeController extends BaseController
     @Log(title = "字典类型", businessType = BusinessType.CLEAN)
     @Operation(summary = "刷新字典缓存")
     @DeleteMapping("/refreshCache")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult refreshCache()
     {
         dictTypeService.resetDictCache();
@@ -134,6 +145,7 @@ public class SysDictTypeController extends BaseController
      */
     @Operation(summary = "获取字典类型选择列表")
     @GetMapping("/optionselect")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult optionselect()
     {
         List<SysDictType> dictTypes = dictTypeService.selectDictTypeAll();

@@ -2,6 +2,10 @@ package com.opc.web.controller.system;
 
 import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +40,7 @@ public class SysIndexController
      */
     @RequestMapping("/")
     @Operation(summary = "获取系统首页信息")
+    @ApiResponse(responseCode = "200", description = "页面加载成功", content = @Content(mediaType = "text/html"))
     public String index()
     {
         return StringUtils.format("欢迎使用{}后台管理框架，当前版本：v{}，请通过前端地址访问。", opcConfig.getName(), opcConfig.getVersion());
@@ -46,7 +51,8 @@ public class SysIndexController
      */
     @PostMapping("/unlockscreen")
     @Operation(summary = "解锁屏幕")
-    public AjaxResult unlockScreen(@RequestBody Map<String, String> body)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult unlockScreen(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "解锁屏幕凭据", required = true) @RequestBody Map<String, String> body)
     {
         String password = body.get("password");
         if (StringUtils.isEmpty(password))

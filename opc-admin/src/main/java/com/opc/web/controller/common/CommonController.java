@@ -5,6 +5,10 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +51,10 @@ public class CommonController
      */
     @GetMapping("/download")
     @Operation(summary = "下载临时文件")
-    public void fileDownload(String fileName, Boolean delete, HttpServletResponse response, HttpServletRequest request)
+    @ApiResponse(responseCode = "200", description = "文件下载成功", content = @Content(mediaType = "application/octet-stream"))
+    public void fileDownload(@Parameter(description = "待下载的文件名", required = true, example = "20240101/report.xlsx") String fileName,
+            @Parameter(description = "下载后是否删除临时文件", required = false, example = "false") Boolean delete, HttpServletResponse response,
+            HttpServletRequest request)
     {
         try
         {
@@ -77,7 +84,8 @@ public class CommonController
      */
     @PostMapping("/upload")
     @Operation(summary = "上传单个文件")
-    public AjaxResult uploadFile(MultipartFile file) throws Exception
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult uploadFile(@Parameter(description = "待上传的文件", required = true, content = @Content(mediaType = "multipart/form-data")) MultipartFile file) throws Exception
     {
         try
         {
@@ -104,7 +112,8 @@ public class CommonController
      */
     @PostMapping("/uploads")
     @Operation(summary = "批量上传文件")
-    public AjaxResult uploadFiles(List<MultipartFile> files) throws Exception
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult uploadFiles(@Parameter(description = "待上传的文件列表", required = true, content = @Content(mediaType = "multipart/form-data")) List<MultipartFile> files) throws Exception
     {
         try
         {
@@ -142,7 +151,9 @@ public class CommonController
      */
     @GetMapping("/download/resource")
     @Operation(summary = "下载资源文件")
-    public void resourceDownload(String resource, HttpServletRequest request, HttpServletResponse response)
+    @ApiResponse(responseCode = "200", description = "文件下载成功", content = @Content(mediaType = "application/octet-stream"))
+    public void resourceDownload(@Parameter(description = "资源文件路径", required = true, example = "/profile/avatar.png") String resource,
+            HttpServletRequest request, HttpServletResponse response)
             throws Exception
     {
         try

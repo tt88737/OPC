@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.opc.common.annotation.Log;
 import com.opc.common.core.controller.BaseController;
@@ -41,7 +45,8 @@ public class SysLogininforController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:logininfor:list')")
     @Operation(summary = "查询登录日志列表")
     @GetMapping("/list")
-    public TableDataInfo list(SysLogininfor logininfor)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = TableDataInfo.class)))
+    public TableDataInfo list(@Parameter(description = "登录日志查询条件", required = false) SysLogininfor logininfor)
     {
         startPage();
         List<SysLogininfor> list = logininforService.selectLogininforList(logininfor);
@@ -52,7 +57,8 @@ public class SysLogininforController extends BaseController
     @PreAuthorize("@ss.hasPermi('monitor:logininfor:export')")
     @Operation(summary = "导出登录日志")
     @PostMapping("/export")
-    public void export(HttpServletResponse response, SysLogininfor logininfor)
+    @ApiResponse(responseCode = "200", description = "文件导出成功", content = @Content(mediaType = "application/octet-stream"))
+    public void export(HttpServletResponse response, @Parameter(description = "登录日志查询条件", required = false) SysLogininfor logininfor)
     {
         List<SysLogininfor> list = logininforService.selectLogininforList(logininfor);
         ExcelUtil<SysLogininfor> util = new ExcelUtil<SysLogininfor>(SysLogininfor.class);
@@ -63,7 +69,8 @@ public class SysLogininforController extends BaseController
     @Log(title = "登录日志", businessType = BusinessType.DELETE)
     @Operation(summary = "删除登录日志")
     @DeleteMapping("/{infoIds}")
-    public AjaxResult remove(@PathVariable Long[] infoIds)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult remove(@Parameter(description = "登录日志编号列表", required = true, example = "1,2") @PathVariable Long[] infoIds)
     {
         return toAjax(logininforService.deleteLogininforByIds(infoIds));
     }
@@ -72,6 +79,7 @@ public class SysLogininforController extends BaseController
     @Log(title = "登录日志", businessType = BusinessType.CLEAN)
     @Operation(summary = "清空登录日志")
     @DeleteMapping("/clean")
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
     public AjaxResult clean()
     {
         logininforService.cleanLogininfor();
@@ -82,7 +90,8 @@ public class SysLogininforController extends BaseController
     @Log(title = "账户解锁", businessType = BusinessType.OTHER)
     @Operation(summary = "解锁登录用户")
     @GetMapping("/unlock/{userName}")
-    public AjaxResult unlock(@PathVariable("userName") String userName)
+    @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
+    public AjaxResult unlock(@Parameter(description = "登录用户名", required = true, example = "admin") @PathVariable("userName") String userName)
     {
         passwordService.clearLoginRecordCache(userName);
         return success();

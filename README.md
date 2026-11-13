@@ -71,4 +71,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
 
 ## 许可证
 
-本项目遵循 MIT License。上游项目的版权与许可证声明见 [LICENSE](LICENSE)。
+OPC 自身代码遵循 [MIT License](LICENSE)。第三方及上游项目的版权与许可证声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

@@ -94,6 +94,33 @@ if ($scanExitCode -eq 1) {
         Write-Output 'Foundation credential check failed: fixed password hash found outside the bootstrap placeholder.'
         exit 1
     }
+
+    $foundationSqlPath = Join-Path $repoRoot 'sql\opc_20260417.sql'
+    if (Test-Path -LiteralPath $foundationSqlPath -PathType Leaf) {
+        $foundationSql = [System.IO.File]::ReadAllText($foundationSqlPath)
+        $demoDataPatterns = @(
+            '(?im)^\s*insert\s+into\s+sys_dept\s+values',
+            '(?im)^\s*insert\s+into\s+sys_post\s+values',
+            '(?im)^\s*insert\s+into\s+sys_role_dept\s+values',
+            '(?im)^\s*insert\s+into\s+sys_user_post\s+values',
+            '(?im)^\s*insert\s+into\s+sys_notice\s+values',
+            '(?im)^\s*insert\s+into\s+sys_user\s+values\(\s*1\s*,\s*(?!null\b)\S',
+            '(?i)15888888888|opc@example\.com|admin@example\.com'
+        )
+        if ($foundationSql -match ($demoDataPatterns -join '|')) {
+            Write-Output 'Foundation SQL check failed: organization, post, notice, contact, or admin association demo data found.'
+            exit 1
+        }
+    }
+
+    $bannerPath = Join-Path $repoRoot 'opc-admin\src\main\resources\banner.txt'
+    if (Test-Path -LiteralPath $bannerPath -PathType Leaf) {
+        $banner = [System.IO.File]::ReadAllText($bannerPath)
+        if ($banner -match '(?i)永无\s*BUG|永不宕机|_ooOoo_|o8888888o') {
+            Write-Output 'Foundation banner check failed: upstream template residue found in banner.txt.'
+            exit 1
+        }
+    }
     Write-Output 'Foundation residue and credential checks passed.'
     exit 0
 }

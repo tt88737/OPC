@@ -1,6 +1,7 @@
 package com.opc.framework.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -58,6 +59,12 @@ public class SecurityConfig
     @Autowired
     private PermitAllUrlProperties permitAllUrl;
 
+    @Value("${springdoc.api-docs.enabled:false}")
+    private boolean apiDocsEnabled;
+
+    @Value("${springdoc.swagger-ui.enabled:false}")
+    private boolean swaggerUiEnabled;
+
 	/**
 	 * 身份验证实现
 	 */
@@ -99,9 +106,16 @@ public class SecurityConfig
             // 注解标记允许匿名访问的url
             .authorizeHttpRequests((requests) -> {
                 permitAllUrl.getUrls().forEach(url -> requests.requestMatchers(url).permitAll());
+                if (swaggerUiEnabled)
+                {
+                    requests.requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll();
+                }
+                if (apiDocsEnabled)
+                {
+                    requests.requestMatchers("/v3/api-docs/**").permitAll();
+                }
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
-                requests.requestMatchers("/login", "/register", "/captchaImage",
-                        "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/druid/**",
+                requests.requestMatchers("/login", "/register", "/captchaImage", "/druid/**",
                         "/actuator/health", "/actuator/health/**").permitAll()
                     // 静态资源，可匿名访问
                     .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/profile/**").permitAll()

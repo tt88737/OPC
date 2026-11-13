@@ -111,6 +111,40 @@ test('foundation residue scan still inspects non-log files under logs', async ()
   assert.match(result.stdout, /Foundation residue check failed/)
 })
 
+test('foundation SQL contains only neutral bootstrap data', async () => {
+  const sql = await repositoryFile('sql/opc_20260417.sql')
+
+  assert.doesNotMatch(sql, /insert into sys_dept values\((?:101|102|103|104|105|106|107|108|109),/i)
+  assert.doesNotMatch(sql, /15888888888|opc@example\.com/)
+  assert.match(sql, /insert into sys_user values\(1,\s+null,/i)
+  assert.doesNotMatch(sql, /insert into sys_post values/i)
+  assert.doesNotMatch(sql, /insert into sys_user_post values/i)
+  assert.doesNotMatch(sql, /insert into sys_role_dept values/i)
+  assert.doesNotMatch(sql, /insert into sys_notice values/i)
+  assert.match(sql, /insert into sys_menu values/i)
+  assert.match(sql, /insert into sys_dict_type values/i)
+})
+
+test('foundation residue verifier enforces SQL and banner cleanup without scanning third-party notices', async () => {
+  const verifier = await repositoryFile('bin/verify-foundation-clean.ps1')
+  assert.match(verifier, /sql[\\/]opc_20260417\.sql/)
+  assert.match(verifier, /sys_dept/)
+  assert.match(verifier, /sys_notice/)
+  assert.match(verifier, /banner\.txt/)
+  assert.match(verifier, /THIRD_PARTY_NOTICES\.md/)
+  assert.doesNotMatch(verifier, /!\*\*\/\*\.md/)
+})
+
+test('OPC banner and license documentation contain no upstream template residue', async () => {
+  const banner = await repositoryFile('opc-admin/src/main/resources/banner.txt')
+  const readme = await repositoryFile('README.md')
+
+  assert.match(banner, /OPC/)
+  assert.doesNotMatch(banner, /佛祖|永无\s*BUG|永不宕机|_ooOoo_|o8888888o/i)
+  assert.match(readme, /LICENSE[^\n]*OPC|OPC[^\n]*LICENSE/)
+  assert.match(readme, /THIRD_PARTY_NOTICES\.md/)
+})
+
 test('CI uses Java 17 and a supported Node 24 release', async () => {
   const workflow = await repositoryFile('.github/workflows/ci.yml')
   const document = parseYaml(workflow)

@@ -73,6 +73,7 @@ class SecurityProfileConfigDataIntegrationTest
             assertEquals("https://app.example", environment.getProperty("cors.allowed-origins"));
             assertEquals("health", environment.getProperty("management.endpoints.web.exposure.include"));
             assertEquals("never", environment.getProperty("management.endpoint.health.show-details"));
+            assertEquals("never", environment.getProperty("management.endpoint.health.show-components"));
             assertNotNull(context.getBean(ProductionSecurityValidator.class));
         });
     }
@@ -111,6 +112,24 @@ class SecurityProfileConfigDataIntegrationTest
                                 "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS", "always"))))
                 .run(context -> assertRejected(context.getStartupFailure(),
                         "management.endpoint.health.show-details"));
+    }
+
+    @Test
+    void rejectsCanonicalSystemPropertyThatExposesProdHealthComponents()
+    {
+        productionConfigDataRunner("management.endpoint.health.show-components=always").run(context ->
+                assertRejected(context.getStartupFailure(), "management.endpoint.health.show-components"));
+    }
+
+    @Test
+    void rejectsStandardEnvironmentPropertyThatExposesProdHealthComponents()
+    {
+        productionConfigDataRunner()
+                .withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(
+                        new SystemEnvironmentPropertySource("health-components-security-test-environment", Map.of(
+                                "MANAGEMENT_ENDPOINT_HEALTH_SHOW_COMPONENTS", "always"))))
+                .run(context -> assertRejected(context.getStartupFailure(),
+                        "management.endpoint.health.show-components"));
     }
 
     private ApplicationContextRunner configDataRunner()

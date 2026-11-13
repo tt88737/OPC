@@ -27,6 +27,7 @@ class ProductionSecurityValidatorTest
             Map.entry("spring.datasource.druid.stat-view-servlet.enabled", "false"),
             Map.entry("management.endpoints.web.exposure.include", "health"),
             Map.entry("management.endpoint.health.show-details", "never"),
+            Map.entry("management.endpoint.health.show-components", "never"),
             Map.entry("spring.datasource.druid.master.url", "jdbc:mysql://db.example/opc"),
             Map.entry("spring.datasource.druid.master.username", "opc"),
             Map.entry("spring.datasource.druid.master.password", "database-secret"),
@@ -146,7 +147,8 @@ class ProductionSecurityValidatorTest
         return Stream.of(
                 Arguments.of("management.endpoints.web.exposure.include", "health,env"),
                 Arguments.of("management.endpoints.web.exposure.include", "*"),
-                Arguments.of("management.endpoint.health.show-details", "always"));
+                Arguments.of("management.endpoint.health.show-details", "always"),
+                Arguments.of("management.endpoint.health.show-components", "always"));
     }
 
     static Stream<Arguments> requiredProductionPropertiesAndUnicodeSpaces()

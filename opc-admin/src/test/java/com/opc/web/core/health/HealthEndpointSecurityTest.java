@@ -11,8 +11,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -38,6 +40,7 @@ import com.alibaba.druid.spring.boot4.autoconfigure.DruidDataSourceAutoConfigure
         properties = {
                 "management.endpoints.web.exposure.include=health",
                 "management.endpoint.health.show-details=never",
+                "management.endpoint.health.show-components=never",
                 "management.health.db.enabled=false",
                 "management.health.redis.enabled=false",
                 "token.secret=health-endpoint-security-test-secret"
@@ -46,6 +49,9 @@ class HealthEndpointSecurityTest
 {
     @LocalServerPort
     private int port;
+
+    @Autowired
+    private WebEndpointsSupplier webEndpointsSupplier;
 
     private final HttpClient client = HttpClient.newHttpClient();
 
@@ -59,6 +65,7 @@ class HealthEndpointSecurityTest
                 .startsWith("application/vnd.spring-boot.actuator.v3+json"));
         assertTrue(response.body().contains("\"status\":\"UP\""));
         assertFalse(response.body().contains("\"code\""));
+        assertFalse(response.body().contains("\"components\""));
     }
 
     @Test
@@ -68,6 +75,8 @@ class HealthEndpointSecurityTest
 
         assertTrue(response.statusCode() == 404 || response.statusCode() == 401);
         assertFalse(response.statusCode() == 200);
+        assertTrue(webEndpointsSupplier.getEndpoints().stream()
+                .noneMatch(endpoint -> "env".equals(endpoint.getEndpointId().toString())));
     }
 
     @Test
@@ -76,6 +85,7 @@ class HealthEndpointSecurityTest
         HttpResponse<String> response = get("/private-test");
 
         assertEquals(401, response.statusCode());
+        assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"));
         assertTrue(response.body().contains("\"code\":401"));
     }
 

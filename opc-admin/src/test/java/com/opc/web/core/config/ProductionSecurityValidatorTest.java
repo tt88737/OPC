@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
@@ -67,6 +68,25 @@ class ProductionSecurityValidatorTest
                 assertRejected(context.getStartupFailure(), propertyName));
     }
 
+    @ParameterizedTest
+    @MethodSource("requiredProductionPropertiesAndUnicodeSpaces")
+    void rejectsUnicodeSpaceOnlyRequiredProductionProperties(String propertyName, String unicodeSpace)
+    {
+        contextRunner(SAFE_PRODUCTION_PROPERTIES, propertyName + "=" + unicodeSpace).run(context ->
+                assertRejected(context.getStartupFailure(), propertyName));
+    }
+
+    @Test
+    void acceptsNonAsciiRequiredProductionValues()
+    {
+        String[] properties = requiredProductionProperties()
+                .map(propertyName -> propertyName + "=valid-\u5bc6\u94a5")
+                .toArray(String[]::new);
+
+        contextRunner(SAFE_PRODUCTION_PROPERTIES, properties).run(context ->
+                assertNull(context.getStartupFailure()));
+    }
+
     private ApplicationContextRunner contextRunner(Map<String, Object> fileProperties, String... systemProperties)
     {
         String[] properties = Stream.concat(Stream.of("spring.profiles.active=prod"), Stream.of(systemProperties))
@@ -109,6 +129,13 @@ class ProductionSecurityValidatorTest
                 "spring.data.redis.password",
                 "token.secret",
                 "cors.allowed-origins");
+    }
+
+    static Stream<Arguments> requiredProductionPropertiesAndUnicodeSpaces()
+    {
+        return requiredProductionProperties().flatMap(propertyName -> Stream.of(
+                Arguments.of(propertyName, "\u00a0"),
+                Arguments.of(propertyName, "\u202f")));
     }
 
     @Configuration(proxyBeanMethods = false)

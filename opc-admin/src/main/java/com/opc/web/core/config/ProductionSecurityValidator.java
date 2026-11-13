@@ -6,7 +6,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 @Component
 @Profile("prod")
@@ -47,7 +46,7 @@ public class ProductionSecurityValidator implements InitializingBean
         }
         for (String propertyName : REQUIRED_PROPERTIES)
         {
-            if (!StringUtils.hasText(environment.getProperty(propertyName)))
+            if (!hasNonWhitespaceCodePoint(environment.getProperty(propertyName)))
             {
                 violations.add(propertyName);
             }
@@ -57,5 +56,11 @@ public class ProductionSecurityValidator implements InitializingBean
             throw new IllegalStateException("Production security invariant violation: "
                     + String.join(", ", violations));
         }
+    }
+
+    private boolean hasNonWhitespaceCodePoint(String value)
+    {
+        return value != null && value.codePoints()
+                .anyMatch(codePoint -> !Character.isWhitespace(codePoint) && !Character.isSpaceChar(codePoint));
     }
 }

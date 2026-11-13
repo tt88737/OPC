@@ -76,7 +76,8 @@ Assert-NotMatches $production 'OPC_(SPRINGDOC|DRUID|DEVTOOLS)_ENABLED' 'prod Swa
 Assert-Matches $productionValidator '@Profile\("prod"\)' 'Production security validation must be restricted to the prod profile.'
 Assert-Matches $productionValidator 'Environment\s+environment' 'Production security validation must inspect the final Spring Environment.'
 Assert-Matches $productionValidator 'environment\.getProperty\(propertyName,\s*Boolean\.class,\s*false\)' 'Production security validation must reject final true feature toggles.'
-Assert-Matches $productionValidator '!StringUtils\.hasText\(environment\.getProperty\(propertyName\)\)' 'Production security validation must reject missing and blank required properties.'
+Assert-Matches $productionValidator 'value\.codePoints\(\)' 'Production security validation must inspect required values by Unicode code point.'
+Assert-Matches $productionValidator '!Character\.isWhitespace\(codePoint\)\s*&&\s*!Character\.isSpaceChar\(codePoint\)' 'Production security validation must reject every Unicode whitespace or space character.'
 
 $protectedProductionProperties = @(
     'springdoc.api-docs.enabled',

@@ -27,14 +27,19 @@ OPC/
 ### 后端
 
 1. 创建 MySQL 数据库并执行 `sql/opc_20260417.sql`。
-2. 按实际环境修改 `opc-admin/src/main/resources/application-*.yml`。
-3. 使用 Java 17 和 Maven 构建：
+2. 将 `opc-local.env.example.ps1` 复制为被 Git 忽略的 `opc-local.env.ps1`，替换其中的占位值后加载环境变量。首次启动必须设置一次性 `OPC_BOOTSTRAP_ADMIN_PASSWORD`；引导成功后立即删除该变量并修改管理员密码。
+3. 默认使用 `dev` profile。开发环境可通过 `OPC_SPRINGDOC_ENABLED` 控制接口文档；Druid 默认关闭，仅在同时配置非空 `OPC_DRUID_USERNAME`、`OPC_DRUID_PASSWORD` 后才可设置 `OPC_DRUID_ENABLED=true`。
+4. 使用 Java 17 和 Maven 构建：
 
 ```bash
 mvn -DskipTests package
 ```
 
-4. 启动 `opc-admin/target/opc-admin.jar`，默认端口为 `8080`。
+5. 启动 `opc-admin/target/opc-admin.jar`，默认端口为 `8080`。
+
+### 生产部署
+
+生产环境必须设置 `OPC_PROFILE=prod`，并显式提供 `OPC_DB_URL`、`OPC_DB_USERNAME`、`OPC_DB_PASSWORD`、`OPC_REDIS_PASSWORD`、`OPC_TOKEN_SECRET` 和 `OPC_CORS_ALLOWED_ORIGINS`。`prod` profile 固定关闭 Swagger/OpenAPI、Druid Web 控制台和 DevTools，不能通过 `OPC_SPRINGDOC_ENABLED`、`OPC_DRUID_ENABLED` 或 `OPC_DEVTOOLS_ENABLED` 重新开启。
 
 ### 前端
 

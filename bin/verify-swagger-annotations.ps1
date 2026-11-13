@@ -21,6 +21,40 @@ $errors = New-Object System.Collections.Generic.List[string]
 $mappingPattern = '^\s*@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\b'
 $chinesePattern = '[\u4e00-\u9fff]'
 
+function Test-CommonResponseModels([string]$Root, [System.Collections.Generic.List[string]]$Errors) {
+    $models = @(
+        @{ RelativePath = 'opc-common/src/main/java/com/opc/common/core/domain/AjaxResult.java'; Type = 'AjaxResult'; Fields = @() },
+        @{ RelativePath = 'opc-common/src/main/java/com/opc/common/core/page/TableDataInfo.java'; Type = 'TableDataInfo'; Fields = @('total', 'rows', 'code', 'msg') },
+        @{ RelativePath = 'opc-common/src/main/java/com/opc/common/core/domain/R.java'; Type = 'R'; Fields = @('code', 'msg', 'data') }
+    )
+    foreach ($model in $models) {
+        $path = Join-Path $Root $model.RelativePath
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            $Errors.Add("$($model.RelativePath):1: 缺少公共响应模型源文件")
+            continue
+        }
+        $lines = [System.IO.File]::ReadAllLines($path)
+        $source = $lines -join "`n"
+        $classSchema = [regex]::Match($source, '@Schema\s*\(\s*description\s*=\s*"(?<description>[^"]*)"\s*\)\s*\r?\n\s*(?:public\s+)?class\s+' + [regex]::Escape($model.Type) + '\b')
+        if (-not $classSchema.Success) {
+            $Errors.Add("$($model.RelativePath):1: $($model.Type) 缺少类级 @Schema(description=...)")
+        } elseif ($classSchema.Groups['description'].Value -notmatch $chinesePattern) {
+            $Errors.Add("$($model.RelativePath):1: $($model.Type) 类级 @Schema description 缺少中文")
+        }
+        foreach ($field in $model.Fields) {
+            $fieldSchema = [regex]::Match($source, '@Schema\s*\(\s*description\s*=\s*"(?<description>[^"]*)"\s*\)\s*\r?\n\s*(?:private|protected|public)\s+[^;=]+\s+' + [regex]::Escape($field) + '\s*(?:=|;)')
+            if (-not $fieldSchema.Success) {
+                $Errors.Add("$($model.RelativePath):1: 字段 $field 缺少带中文 description 的 @Schema")
+            } elseif ($fieldSchema.Groups['description'].Value -notmatch $chinesePattern) {
+                $Errors.Add("$($model.RelativePath):1: 字段 $field 的 @Schema description 缺少中文")
+            }
+        }
+        if ($model.Type -eq 'AjaxResult' -and $source -match '(?m)^\s*@Schema\b[^\r\n]*(?:\r?\n\s*)+(?:public|protected|private)\s+static\s+final\b') {
+            $Errors.Add("$($model.RelativePath):1: AjaxResult 不应把 HashMap 静态常量声明为 JSON @Schema 字段")
+        }
+    }
+}
+
 function Get-CommentMaskedLines([string[]]$SourceLines) {
     $maskedLines = New-Object System.Collections.Generic.List[string]
     $inBlockComment = $false
@@ -127,6 +161,91 @@ function Test-AnnotationGap([string[]]$SourceLines, [object[]]$Records, [int]$Fi
     return $true
 }
 
+function Get-MethodParameterTexts([string[]]$MaskedLines, [int]$MethodStart) {
+    $text = New-Object System.Text.StringBuilder
+    $started = $false
+    $depth = 0
+    $angleDepth = 0
+    $bracketDepth = 0
+    $quote = [char]0
+    for ($lineIndex = $MethodStart; $lineIndex -lt $MaskedLines.Length; $lineIndex++) {
+        $line = $MaskedLines[$lineIndex]
+        for ($index = 0; $index -lt $line.Length; $index++) {
+            $character = $line[$index]
+            if ($quote -ne [char]0) {
+                [void]$text.Append($character)
+                if ($character -eq '\' -and ($index + 1) -lt $line.Length) {
+                    $index++
+                    [void]$text.Append($line[$index])
+                } elseif ($character -eq $quote) { $quote = [char]0 }
+                continue
+            }
+            if (($character -eq '"') -or ($character -eq "'")) {
+                $quote = $character
+                if ($started) { [void]$text.Append($character) }
+                continue
+            }
+            if (-not $started) {
+                if ($character -eq '(') {
+                    $started = $true
+                    $depth = 1
+                }
+                continue
+            }
+            if ($character -eq '(') { $depth++ }
+            elseif ($character -eq ')') {
+                $depth--
+                if ($depth -eq 0) {
+                    $parameters = New-Object System.Collections.Generic.List[string]
+                    $parameterText = $text.ToString()
+                    $start = 0
+                    $parameterAngle = 0
+                    $parameterParenthesis = 0
+                    $parameterBracket = 0
+                    for ($parameterIndex = 0; $parameterIndex -lt $parameterText.Length; $parameterIndex++) {
+                        $parameterCharacter = $parameterText[$parameterIndex]
+                        if ($parameterCharacter -eq '<') { $parameterAngle++ }
+                        elseif ($parameterCharacter -eq '>' -and $parameterAngle -gt 0) { $parameterAngle-- }
+                        elseif ($parameterCharacter -eq '(') { $parameterParenthesis++ }
+                        elseif ($parameterCharacter -eq ')' -and $parameterParenthesis -gt 0) { $parameterParenthesis-- }
+                        elseif ($parameterCharacter -eq '[') { $parameterBracket++ }
+                        elseif ($parameterCharacter -eq ']' -and $parameterBracket -gt 0) { $parameterBracket-- }
+                        elseif ($parameterCharacter -eq ',' -and $parameterAngle -eq 0 -and $parameterParenthesis -eq 0 -and $parameterBracket -eq 0) {
+                            $candidate = $parameterText.Substring($start, $parameterIndex - $start).Trim()
+                            if ($candidate.Length -gt 0) { $parameters.Add($candidate) }
+                            $start = $parameterIndex + 1
+                        }
+                    }
+                    $candidate = $parameterText.Substring($start).Trim()
+                    if ($candidate.Length -gt 0) { $parameters.Add($candidate) }
+                    return $parameters.ToArray()
+                }
+            } elseif ($character -eq '<') { $angleDepth++ }
+            elseif ($character -eq '>' -and $angleDepth -gt 0) { $angleDepth-- }
+            elseif ($character -eq '[') { $bracketDepth++ }
+            elseif ($character -eq ']' -and $bracketDepth -gt 0) { $bracketDepth-- }
+            [void]$text.Append($character)
+        }
+        if ($started) { [void]$text.Append("`n") }
+    }
+    return @()
+}
+
+function Test-SpringInternalParameter([string]$ParameterText) {
+    if ($ParameterText -match '@(?:AuthenticationPrincipal|CurrentSecurityContext|SessionAttribute|RequestAttribute)\b') { return $true }
+    $withoutAnnotations = [regex]::Replace($ParameterText, '@[\w$.]+(?:\s*\([^)]*\))?', ' ')
+    $normalized = [regex]::Replace($withoutAnnotations, '\s+', ' ').Trim()
+    $typeMatch = [regex]::Match($normalized, '(?<type>[\w$.<>?,\[\] ]+)\s+[\w$]+$')
+    if (-not $typeMatch.Success) { return $false }
+    $type = $typeMatch.Groups['type'].Value.Trim()
+    $hasExplicitRequestBinding = $ParameterText -match '@(?:RequestBody|RequestParam|PathVariable|RequestHeader|RequestPart|CookieValue|ModelAttribute)\b'
+    if (-not $hasExplicitRequestBinding -and $type -match '(?:^|[<, ])Map$') { return $true }
+    return $type -match '(?:^|[<, ])(?:jakarta\.servlet\.)?http\.HttpServlet(?:Request|Response)$' -or
+        $type -match '(?:^|[<, ])(?:HttpServletRequest|HttpServletResponse|ServletRequest|ServletResponse|HttpSession|WebRequest|NativeWebRequest|ServletWebRequest|Principal|Authentication|SecurityContext|Model|ModelMap|RedirectAttributes|BindingResult|Errors|SessionStatus|UriComponentsBuilder|Locale|TimeZone|ZoneId|HttpHeaders|PushBuilder|ServletContext|WebDataBinder|InputStream|OutputStream|Reader|Writer|HttpMethod)$'
+}
+
+Test-CommonResponseModels $repoRoot $errors
+
 foreach ($file in $files) {
     $lines = [System.IO.File]::ReadAllLines($file.FullName)
     $maskedLines = (Get-CommentMaskedLines $lines).Lines
@@ -169,6 +288,7 @@ foreach ($file in $files) {
     foreach ($mapping in $annotations | Where-Object { $_.Name -match '^(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)$' }) {
         $nextDeclaration = $lines.Length
         $declarationType = ''
+        $methodStart = -1
         $signature = New-Object System.Collections.Generic.List[string]
         for ($i = $mapping.End + 1; $i -lt $maskedLines.Length; $i++) {
             if ($maskedLines[$i] -match '^\s*(?:(?:public|abstract|final)\s+)*class\s+(?<name>[\w$]+)\b') {
@@ -188,6 +308,7 @@ foreach ($file in $files) {
             if ($joinedSignature -match '^\s*(?:(?:public|protected|private|static|final|synchronized|abstract|native|default)\s+)*(?:<[^>]+>\s*)?[\w$][\w$<>,.?\[\] ]*\s+[\w$]+\s*\(') {
                 $nextDeclaration = $i
                 $declarationType = 'method'
+                $methodStart = $i
                 break
             }
             if ($maskedLines[$i].Contains('{') -or $maskedLines[$i].Contains(';') -or $maskedLines[$i].Contains('}')) { break }
@@ -196,6 +317,11 @@ foreach ($file in $files) {
         if ($declarationType -ne 'method') {
             $errors.Add("${relativePath}:$($mapping.Start + 1): 无法确定映射注解所属的 Controller 类或方法")
             continue
+        }
+
+        foreach ($parameter in @(Get-MethodParameterTexts $maskedLines $methodStart)) {
+            if ($parameter -match '@Parameter\b' -or (Test-SpringInternalParameter $parameter)) { continue }
+            $errors.Add("${relativePath}:$($mapping.Start + 1): 映射方法存在未覆盖的请求参数：$($parameter.Trim())（请添加带中文 description 的 @Parameter）")
         }
 
         # Include annotations contiguous on either side of the mapping annotation.

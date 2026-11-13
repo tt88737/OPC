@@ -1,0 +1,10 @@
+# Copy to opc-local.env.ps1 and replace the database password before sourcing.
+$env:OPC_DB_URL = 'jdbc:mysql://127.0.0.1:3306/opc?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8'
+$env:OPC_DB_USERNAME = 'opc'
+$env:OPC_DB_PASSWORD = 'REPLACE_WITH_EXISTING_OPC_DB_PASSWORD'
+$env:OPC_REDIS_PASSWORD = ''
+$env:OPC_TOKEN_SECRET = 'REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_64_CHARS'
+$env:OPC_DRUID_ENABLED = 'true'
+$env:OPC_DEVTOOLS_ENABLED = 'false'
+$env:OPC_SPRINGDOC_ENABLED = 'true'
+$env:OPC_CORS_ALLOWED_ORIGINS = 'http://localhost:80,http://127.0.0.1:80,http://localhost:5173,http://127.0.0.1:5173'

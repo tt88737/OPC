@@ -1,0 +1,59 @@
+######################################################################
+# Build Tools
+
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+######################################################################
+# IDE
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### JRebel ###
+rebel.xml
+
+### NetBeans ###
+nbproject/private/
+build/*
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+######################################################################
+# Others
+*.log
+opc-local.env.ps1
+*.xml.versionsBackup
+*.swp
+
+# Local workspaces, backups, and task notes
+.worktrees/
+worktrees/
+.local-backups/
+dependency-tree*.txt
+task_plan.md
+findings.md
+progress.md
+powershell-console-backup.reg
+powershell-diagnostics.md
+
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml

@@ -62,7 +62,7 @@ public class SysDeptController extends BaseController
     @Operation(summary = "查询排除指定节点的部门列表")
     @GetMapping("/list/exclude/{deptId}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(schema = @Schema(implementation = AjaxResult.class)))
-    public AjaxResult excludeChild(@Parameter(description = "排除的部门编号", required = false, example = "1") @PathVariable(value = "deptId", required = false) Long deptId)
+    public AjaxResult excludeChild(@Parameter(description = "排除的部门编号", required = true, example = "1") @PathVariable(value = "deptId", required = false) Long deptId)
     {
         List<SysDept> depts = deptService.selectDeptList(new SysDept());
         depts.removeIf(d -> d.getDeptId().intValue() == deptId || ArrayUtils.contains(StringUtils.split(d.getAncestors(), ","), deptId + ""));

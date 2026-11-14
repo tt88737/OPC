@@ -188,11 +188,11 @@ test('OPC banner and license documentation contain no upstream template residue'
   assert.doesNotMatch(readme, /THIRD_PARTY_NOTICES\.md/)
 })
 
-test('CI uses Java 17 and a supported Node 24 release', async () => {
+test('CI uses Java 21 and a supported Node 24 release', async () => {
   const workflow = await repositoryFile('.github/workflows/ci.yml')
   const document = parseYaml(workflow)
 
-  assert.match(workflow, /java-version:\s*['"]?17/)
+  assert.match(workflow, /java-version:\s*['"]?21/)
   assert.match(workflow, /cache:\s*['"]?maven/)
   assert.match(workflow, /node-version:\s*['"]?24/)
   assert.match(workflow, /verify-foundation\.ps1/)

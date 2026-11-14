@@ -63,6 +63,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
 
 脚本依次检查仓库纳管边界、基础清理、安全 profile、Swagger 注解、Maven 测试、前端依赖锁定安装、前端测试与生产构建，并执行高危级别的 npm 依赖审计；任一阶段失败都会立即返回对应的非零退出码。GitHub Actions 的 `CI` workflow 会在每次 push 和 pull request 上使用相同入口。
 
+后端覆盖率由 JaCoCo 聚合报告统一度量，HTML 报告位于 `opc-coverage/target/site/jacoco-aggregate/`。当前聚合行覆盖率门槛为 5%，这是基于现状设置的最低基线，不是质量目标；新增和修改代码应补充测试并逐步提高门槛。
+
+## 工程协作
+
+- 贡献流程、分支、提交和 PR 要求见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 版本、上线检查、发布证据和回滚步骤见 [发布与回滚手册](docs/release-and-rollback.md)。
+
 ## 依赖安全扫描
 
 `Dependency Check` workflow 每周运行，也可在 GitHub Actions 中手动触发。它使用 OWASP Dependency-Check 对 Maven 聚合依赖执行 CVSS 7 阈值扫描，并执行 `npm ci` 和 `npm audit --audit-level=high`；HTML、JSON 报告会作为 workflow artifact 上传。扫描或数据源更新失败会使任务失败，报告仅代表扫描时可用的数据和规则，不应视为绝对无漏洞的保证。

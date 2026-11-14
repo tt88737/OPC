@@ -35,6 +35,9 @@
         <velocity.version>2.4.1</velocity.version>
         <swagger-ui.version>5.34.1</swagger-ui.version>
         <mysql.version>26.10.0</mysql.version>
+        <jacoco.version>0.8.14</jacoco.version>
+        <!-- Measured six-module aggregate LINE coverage: 403/7935 = 0.0508; keep a 0.0500 baseline. -->
+        <jacoco.minimum.line.ratio>0.05</jacoco.minimum.line.ratio>
     </properties>
 
     <!-- 依赖声明 -->
@@ -218,11 +221,46 @@
         <module>opc-quartz</module>
         <module>opc-generator</module>
         <module>opc-common</module>
+        <module>opc-coverage</module>
     </modules>
     <packaging>pom</packaging>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <failOnViolation>true</failOnViolation>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

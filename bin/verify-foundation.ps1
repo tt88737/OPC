@@ -25,6 +25,9 @@ try {
     Invoke-FoundationStage 'verify-repository.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-repository.ps1')
     }
+    Invoke-FoundationStage 'verify-version-consistency.ps1' {
+        & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-version-consistency.ps1')
+    }
     Invoke-FoundationStage 'verify-foundation-clean.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-foundation-clean.ps1')
     }
@@ -34,11 +37,25 @@ try {
     Invoke-FoundationStage 'verify-swagger-annotations.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-swagger-annotations.ps1')
     }
-    Invoke-FoundationStage 'mvnw.cmd clean test' { & (Join-Path $repoRoot 'mvnw.cmd') clean test }
+    Invoke-FoundationStage 'mvnw.cmd checkstyle:check' { & (Join-Path $repoRoot 'mvnw.cmd') checkstyle:check }
 
     Push-Location (Join-Path $repoRoot 'frontend')
     try {
         Invoke-FoundationStage 'npm ci' { & npm ci }
+        Invoke-FoundationStage 'npm run lint' { & npm run lint }
+        Invoke-FoundationStage 'npm run format:check' { & npm run format:check }
+    }
+    finally {
+        Pop-Location
+    }
+
+    Invoke-FoundationStage 'mvnw.cmd clean verify' { & (Join-Path $repoRoot 'mvnw.cmd') clean verify }
+    Invoke-FoundationStage 'verify-aggregate-coverage.ps1' {
+        & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-aggregate-coverage.ps1')
+    }
+
+    Push-Location (Join-Path $repoRoot 'frontend')
+    try {
         Invoke-FoundationStage 'foundation contract tests' {
             & node --test (Join-Path $repoRoot 'test/foundation-contract.test.mjs')
         }

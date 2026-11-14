@@ -11,6 +11,11 @@ export default function createAutoImport() {
         '@/utils/opc': ['selectDictLabel']
       }
     ],
-    dts: false
+    dts: false,
+    eslintrc: {
+      enabled: true,
+      filepath: './.eslintrc-auto-import.json',
+      globalsPropValue: 'readonly'
+    }
   })
 }

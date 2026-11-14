@@ -196,6 +196,9 @@ test('CI uses Java 17 and a supported Node 24 release', async () => {
   assert.match(workflow, /cache:\s*['"]?maven/)
   assert.match(workflow, /node-version:\s*['"]?24/)
   assert.match(workflow, /verify-foundation\.ps1/)
+  assert.match(workflow, /choco install ripgrep --yes --no-progress/)
+  assert.match(workflow, /rg --version/)
+  assert.ok(workflow.indexOf('choco install ripgrep') < workflow.indexOf('verify-foundation.ps1'))
   assert.match(workflow, /persist-credentials:\s*false/)
   assert.doesNotMatch(workflow, /uses:\s*actions\/[^@\s]+@v\d/)
   for (const [action, pin] of Object.entries(PINNED_ACTIONS).filter(([name]) => name !== 'actions/upload-artifact')) {
@@ -224,6 +227,9 @@ test('dependency scan fails at CVSS 7 and always uploads HTML and JSON reports',
   assert.match(workflow, /npm audit --audit-level=high/)
   assert.match(workflow, /dependencies\.Count -eq 0/)
   assert.match(workflow, /steps\.maven_scan\.outcome != 'success'/)
+  assert.match(workflow, /choco install ripgrep --yes --no-progress/)
+  assert.match(workflow, /rg --version/)
+  assert.ok(workflow.indexOf('choco install ripgrep') < workflow.indexOf('Scan Maven dependencies'))
   assert.match(workflow, /persist-credentials:\s*false/)
   assert.doesNotMatch(workflow, /uses:\s*actions\/[^@\s]+@v\d/)
   for (const [action, pin] of Object.entries(PINNED_ACTIONS)) {

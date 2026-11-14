@@ -30,6 +30,8 @@ import com.opc.common.core.domain.entity.SysRole;
 import com.opc.common.core.domain.entity.SysUser;
 import com.opc.common.core.page.TableDataInfo;
 import com.opc.common.enums.BusinessType;
+import com.opc.common.constant.UserConstants;
+import com.opc.common.utils.PasswordUtils;
 import com.opc.common.utils.SecurityUtils;
 import com.opc.common.utils.StringUtils;
 import com.opc.common.utils.poi.ExcelUtil;
@@ -146,7 +148,11 @@ public class SysUserController extends BaseController
     {
         deptService.checkDeptDataScope(user.getDeptId());
         roleService.checkRoleDataScope(user.getRoleIds());
-        if (!userService.checkUserNameUnique(user))
+        if (!PasswordUtils.isWithinBounds(user.getPassword(), UserConstants.PASSWORD_MIN_LENGTH))
+        {
+            return error("密码长度必须在5到64个字符之间，且UTF-8编码不超过72字节");
+        }
+        else if (!userService.checkUserNameUnique(user))
         {
             return error("新增用户'" + user.getUserName() + "'失败，登录账号已存在");
         }
@@ -222,6 +228,10 @@ public class SysUserController extends BaseController
     {
         userService.checkUserAllowed(user);
         userService.checkUserDataScope(user.getUserId());
+        if (!PasswordUtils.isWithinBounds(user.getPassword(), UserConstants.PASSWORD_MIN_LENGTH))
+        {
+            return error("密码长度必须在5到64个字符之间，且UTF-8编码不超过72字节");
+        }
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
         user.setUpdateBy(getUsername());
         return toAjax(userService.resetPwd(user));

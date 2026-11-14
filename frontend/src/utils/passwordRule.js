@@ -11,6 +11,7 @@
  */
 
 import cache from '@/plugins/cache'
+import { passwordBoundsValidator, validatePasswordBounds } from '@/utils/passwordPolicy'
 
 // 密码限制类型
 const pwdChrType = ref(cache.session.get('pwrChrtype') || '0')
@@ -30,15 +31,16 @@ export function usePasswordRule() {
     const rule = PWD_RULES[pwdChrType.value] || PWD_RULES['0']
     return [
       { required: true, message: '密码不能为空', trigger: 'blur' },
-      { min: 6, max: 20, message: '密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+      { validator: passwordBoundsValidator, trigger: 'blur' },
       { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
     ]
   })
   // 校验prompt的inputValidator函数
   const pwdPromptValidator = (value) => {
     const rule = PWD_RULES['0']
-    if (!value || value.length < 6 || value.length > 20) {
-      return '密码长度必须介于 6 和 20 之间'
+    const boundsError = validatePasswordBounds(value)
+    if (boundsError) {
+      return boundsError
     }
     if (!rule.pattern.test(value)) {
       return rule.message
@@ -49,7 +51,7 @@ export function usePasswordRule() {
     const rule = PWD_RULES[pwdChrType.value] || PWD_RULES['0']
     return [
       { required: true, message: '新密码不能为空', trigger: 'blur' },
-      { min: 6, max: 20, message: '新密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+      { validator: passwordBoundsValidator, trigger: 'blur' },
       { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
     ]
   })
@@ -58,7 +60,7 @@ export function usePasswordRule() {
     const rule = PWD_RULES['0']
     return [
       { required: true, message: '请输入您的密码', trigger: 'blur' },
-      { min: 6, max: 20, message: '用户密码长度必须介于 6 和 20 之间', trigger: 'blur' },
+      { validator: passwordBoundsValidator, trigger: 'blur' },
       { pattern: rule.pattern, message: rule.message, trigger: 'blur' }
     ]
   })

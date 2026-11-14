@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test test/*.test.js",
     "build:prod": "vite build",
     "build:stage": "vite build --mode staging",
     "preview": "vite preview"
@@ -41,6 +42,7 @@
     "unplugin-auto-import": "^21.1.0",
     "unplugin-vue-setup-extend-plus": "1.0.1",
     "vite": "^6.4.6",
+    "yaml": "2.9.1",
     "vite-plugin-compression": "0.5.1"
   },
   "overrides": {

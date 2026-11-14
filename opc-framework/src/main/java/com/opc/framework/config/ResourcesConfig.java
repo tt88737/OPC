@@ -1,12 +1,10 @@
 package com.opc.framework.config;
 
-import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.CacheControl;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -26,8 +24,6 @@ public class ResourcesConfig implements WebMvcConfigurer
 {
     @Value("${cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
-    @Value("${springdoc.swagger-ui.version:5.34.1}")
-    private String swaggerUiVersion;
     @Autowired
     private RepeatSubmitInterceptor repeatSubmitInterceptor;
 
@@ -37,10 +33,6 @@ public class ResourcesConfig implements WebMvcConfigurer
         /** 本地文件上传路径 */
         registry.addResourceHandler(Constants.RESOURCE_PREFIX + "/**")
                 .addResourceLocations("file:" + OPCConfig.getProfile() + "/");
-
-        registry.addResourceHandler("/swagger-ui/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/" + swaggerUiVersion + "/")
-                .setCacheControl(CacheControl.maxAge(5, TimeUnit.HOURS).cachePublic());
 
     }
 

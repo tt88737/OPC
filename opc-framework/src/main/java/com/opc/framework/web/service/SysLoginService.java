@@ -20,6 +20,7 @@ import com.opc.common.exception.user.UserNotExistsException;
 import com.opc.common.exception.user.UserPasswordNotMatchException;
 import com.opc.common.utils.DateUtils;
 import com.opc.common.utils.MessageUtils;
+import com.opc.common.utils.PasswordUtils;
 import com.opc.common.utils.StringUtils;
 import com.opc.common.utils.ip.IpUtils;
 import com.opc.framework.manager.AsyncManager;
@@ -142,8 +143,7 @@ public class SysLoginService
             throw new UserNotExistsException();
         }
         // 密码如果不在指定范围内 错误
-        if (password.length() < UserConstants.PASSWORD_MIN_LENGTH
-                || password.length() > UserConstants.PASSWORD_MAX_LENGTH)
+        if (!PasswordUtils.isWithinBounds(password, UserConstants.PASSWORD_MIN_LENGTH))
         {
             AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.password.not.match")));
             throw new UserPasswordNotMatchException();

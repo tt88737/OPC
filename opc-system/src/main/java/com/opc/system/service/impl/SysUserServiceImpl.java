@@ -28,9 +28,9 @@ import com.opc.system.mapper.SysRoleMapper;
 import com.opc.system.mapper.SysUserMapper;
 import com.opc.system.mapper.SysUserPostMapper;
 import com.opc.system.mapper.SysUserRoleMapper;
-import com.opc.system.service.ISysConfigService;
 import com.opc.system.service.ISysDeptService;
 import com.opc.system.service.ISysUserService;
+import com.opc.system.service.SecureTemporaryPasswordGenerator;
 
 /**
  * 用户 业务层处理
@@ -41,6 +41,13 @@ import com.opc.system.service.ISysUserService;
 public class SysUserServiceImpl implements ISysUserService
 {
     private static final Logger log = LoggerFactory.getLogger(SysUserServiceImpl.class);
+
+    private final SecureTemporaryPasswordGenerator passwordGenerator;
+
+    public SysUserServiceImpl(SecureTemporaryPasswordGenerator passwordGenerator)
+    {
+        this.passwordGenerator = passwordGenerator;
+    }
 
     @Autowired
     private SysUserMapper userMapper;
@@ -56,9 +63,6 @@ public class SysUserServiceImpl implements ISysUserService
 
     @Autowired
     private SysUserPostMapper userPostMapper;
-
-    @Autowired
-    private ISysConfigService configService;
 
     @Autowired
     private ISysDeptService deptService;
@@ -497,6 +501,7 @@ public class SysUserServiceImpl implements ISysUserService
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public String importUser(List<SysUser> userList, Boolean isUpdateSupport, String operName)
     {
         if (StringUtils.isNull(userList) || userList.size() == 0)
@@ -517,8 +522,8 @@ public class SysUserServiceImpl implements ISysUserService
                 {
                     BeanValidators.validateWithException(validator, user);
                     deptService.checkDeptDataScope(user.getDeptId());
-                    String password = configService.selectConfigByKey("sys.user.initPassword");
-                    user.setPassword(SecurityUtils.encryptPassword(password));
+                    user.setPassword(SecurityUtils.encryptPassword(passwordGenerator.generate()));
+                    user.setStatus("1");
                     user.setCreateBy(operName);
                     userMapper.insertUser(user);
                     successNum++;
@@ -532,6 +537,8 @@ public class SysUserServiceImpl implements ISysUserService
                     deptService.checkDeptDataScope(user.getDeptId());
                     user.setUserId(u.getUserId());
                     user.setDeptId(u.getDeptId());
+                    user.setPassword(null);
+                    user.setStatus(null);
                     user.setUpdateBy(operName);
                     userMapper.updateUser(user);
                     successNum++;

@@ -4,31 +4,42 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repositoryRoot
 
 try {
-    $lockFile = 'frontend/package-lock.json'
-    if (-not (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
-        throw "$lockFile does not exist"
-    }
+    $requiredTrackedFiles = @(
+        'frontend/package-lock.json'
+        'frontend/src/utils/passwordPolicy.js'
+        'frontend/test/passwordPolicy.test.js'
+        'test/foundation-contract.test.mjs'
+        'bin/verify-foundation.ps1'
+        '.github/dependabot.yml'
+        '.github/workflows/ci.yml'
+        '.github/workflows/dependency-check.yml'
+    )
+    foreach ($requiredFile in $requiredTrackedFiles) {
+        if (-not (Test-Path -LiteralPath $requiredFile -PathType Leaf)) {
+            throw "$requiredFile does not exist"
+        }
 
-    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = 'Continue'
-        & git ls-files --error-unmatch -- $lockFile 2>$null | Out-Null
-        $trackedExitCode = $LASTEXITCODE
-    }
-    finally {
-        $ErrorActionPreference = $previousErrorActionPreference
-    }
-    if ($trackedExitCode -ne 0) {
-        $notTrackedMessage = '{0}{1}{2}' -f ([char]0x672A), ([char]0x7EB3), ([char]0x7BA1)
-        throw "$lockFile $notTrackedMessage"
-    }
+        $previousErrorActionPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & git ls-files --error-unmatch -- $requiredFile 2>$null | Out-Null
+            $trackedExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        if ($trackedExitCode -ne 0) {
+            $notTrackedMessage = '{0}{1}{2}' -f ([char]0x672A), ([char]0x7EB3), ([char]0x7BA1)
+            throw "$requiredFile $notTrackedMessage"
+        }
 
-    & git check-ignore --no-index --quiet -- $lockFile
-    if ($LASTEXITCODE -eq 0) {
-        throw "$lockFile is ignored by .gitignore"
-    }
-    if ($LASTEXITCODE -ne 1) {
-        throw "Unable to check ignore status for $lockFile"
+        & git check-ignore --no-index --quiet -- $requiredFile
+        if ($LASTEXITCODE -eq 0) {
+            throw "$requiredFile is ignored by .gitignore"
+        }
+        if ($LASTEXITCODE -ne 1) {
+            throw "Unable to check ignore status for $requiredFile"
+        }
     }
 
     $requiredPathspecs = @(

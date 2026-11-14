@@ -1,0 +1,35 @@
+spring:
+  devtools:
+    restart:
+      enabled: ${OPC_DEVTOOLS_ENABLED:false}
+  data:
+    redis:
+      password: ${OPC_REDIS_PASSWORD:}
+  datasource:
+    druid:
+      webStatFilter:
+        enabled: ${OPC_DRUID_ENABLED:false}
+      statViewServlet:
+        enabled: ${OPC_DRUID_ENABLED:false}
+        allow: ${OPC_DRUID_ALLOW:127.0.0.1}
+        url-pattern: /druid/*
+        login-username: ${OPC_DRUID_USERNAME:}
+        login-password: ${OPC_DRUID_PASSWORD:}
+
+springdoc:
+  api-docs:
+    enabled: ${OPC_SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${OPC_SPRINGDOC_ENABLED:true}
+    version: 5.34.1
+    path: /swagger-ui.html
+    tags-sorter: alpha
+  group-configs:
+    - group: 'default'
+      display-name: 'OPC 管理平台接口'
+      paths-to-match: '/**'
+      packages-to-scan: com.opc.web.controller
+
+cors:
+  allowed-origins: ${OPC_CORS_ALLOWED_ORIGINS:http://localhost,http://127.0.0.1,http://localhost:80,http://127.0.0.1:80,http://localhost:5173,http://127.0.0.1:5173}

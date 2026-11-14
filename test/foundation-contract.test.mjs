@@ -269,6 +269,25 @@ test('governance findings record the stable Node toolchain standard', async () =
   assert.match(findings, /标准工具链[^\n]*Node(?:\.js)? 24\.15\.0/)
 })
 
+test('governance documents record the enforced main branch policy', async () => {
+  const taskPlan = await repositoryFile('task_plan.md')
+  const progress = await repositoryFile('progress.md')
+  const findings = await repositoryFile('findings.md')
+  const contributing = await repositoryFile('CONTRIBUTING.md')
+  const policyDocuments = `${progress}\n${contributing}`
+
+  assert.match(taskPlan, /Task 5\s*\|\s*已完成/)
+  assert.match(progress, /2026-11-14/)
+  assert.match(policyDocuments, /verify/)
+  assert.match(policyDocuments, /(?:至少|需要|要求)[^\n]*1[^\n]*(?:批准|审查)|1[^\n]*(?:批准|审查)/)
+  assert.match(policyDocuments, /管理员[^\n]*(?:不可|不能|不得)[^\n]*(?:绕过|跳过)/)
+  assert.match(policyDocuments, /(?:禁止|禁用)[^\n]*强制推送/)
+  assert.match(policyDocuments, /(?:禁止|禁用)[^\n]*删除/)
+  assert.match(policyDocuments, /(?:讨论|会话|对话)[^\n]*(?:解决|完成)/)
+  assert.match(findings, /远端状态[^\n]*(?:API|接口)[^\n]*(?:复核|核验)/i)
+  assert.doesNotMatch(`${taskPlan}\n${progress}\n${findings}\n${contributing}`, /(?:尚未|未)(?:配置|完成或核验)|在其完成前/)
+})
+
 async function runVersionConsistencyFixture({
   pomVersion = '3.9.2',
   frontendVersion = '3.9.2',

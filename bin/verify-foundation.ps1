@@ -25,6 +25,9 @@ try {
     Invoke-FoundationStage 'verify-repository.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-repository.ps1')
     }
+    Invoke-FoundationStage 'verify-version-consistency.ps1' {
+        & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-version-consistency.ps1')
+    }
     Invoke-FoundationStage 'verify-foundation-clean.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-foundation-clean.ps1')
     }

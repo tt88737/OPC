@@ -30,8 +30,10 @@ async function repositoryYaml(path) {
 
 test('foundation verifier runs required fail-fast stages in order', async () => {
   const script = await repositoryFile('bin/verify-foundation.ps1')
+  const repositoryVerifier = await repositoryFile('bin/verify-repository.ps1')
   const stages = [
     'verify-repository.ps1',
+    'verify-version-consistency.ps1',
     'verify-foundation-clean.ps1',
     'verify-security-profiles.ps1',
     'verify-swagger-annotations.ps1',
@@ -51,6 +53,7 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /Push-Location\s+\$repoRoot/)
   assert.match(script, /\$LASTEXITCODE/)
   assert.match(script, /exit\s+\$stageExitCode/)
+  assert.match(repositoryVerifier, /['"]bin\/verify-version-consistency\.ps1['"]/)
 })
 
 test('Java and frontend quality gates run before tests and builds', async () => {
@@ -205,6 +208,9 @@ test('contribution and release governance documents are tracked and actionable',
   assert.match(contributing, /审查/)
   assert.match(contributing, unifiedVerification)
   assert.match(contributing, /失败[^\n]*(?:不得|禁止)[^\n]*(?:绕过|忽略)/)
+  assert.match(contributing, /(?:仅支持|只支持)[^\n]*Windows PowerShell/)
+  assert.match(contributing, /非 Windows[^\n]*(?:Windows VM|CI)[^\n]*完整门禁/)
+  assert.match(contributing, /\.\/mvnw[^\n]*(?:不能|不得)[^\n]*(?:替代|代替)/)
   assert.match(contributing, /(?:敏感信息|密钥|凭据)[^\n]*(?:不得|禁止)[^\n]*提交/)
   for (const toolchain of [/Java 21/, /Node(?:\.js)? 24\.15(?:\.0)?/, /Maven Wrapper/, /npm ci/]) {
     assert.match(contributing, toolchain)
@@ -214,11 +220,18 @@ test('contribution and release governance documents are tracked and actionable',
   assert.match(release, /tag/)
   assert.match(release, /mvnw\.cmd clean verify/)
   assert.match(release, unifiedVerification)
+  assert.match(release, /verify-version-consistency\.ps1 -ExpectedVersion vMAJOR\.MINOR\.PATCH/)
+  assert.match(release, /(?:仅支持|只支持)[^\n]*Windows PowerShell/)
+  assert.match(release, /非 Windows[^\n]*(?:Windows VM|CI)[^\n]*完整门禁/)
+  assert.match(release, /\.\/mvnw[^\n]*(?:不能|不得)[^\n]*(?:替代|代替)/)
   assert.match(release, /(?:构建产物|artifact)[^\n]*(?:校验|哈希|SHA-?256)/i)
   assert.match(release, /生产[^\n]*配置[^\n]*检查/)
   assert.match(release, /数据库[^\n]*(?:变更|迁移)[^\n]*备份|备份[^\n]*数据库/)
   assert.match(release, /健康检查/)
   assert.match(release, /应用[^\n]*配置[^\n]*数据库/)
+  assert.match(release, /数据异常[^\n]*(?:摘流|隔离写流量)[^\n]*(?:证据|现场)/)
+  assert.match(release, /安全边界失效[^\n]*(?:摘流|隔离)[^\n]*(?:证据|现场)/)
+  assert.match(release, /兼容性验证[^\n]*原子[^\n]*(?:应用|配置)[^\n]*切换/)
   assert.match(release, /不可逆[^\n]*(?:迁移|变更)/)
   assert.match(release, /(?:失败证据|审计记录)/)
   assert.doesNotMatch(release, /(?:已经|当前已|现已)(?:引入|使用|集成)[^\n]*(?:Flyway|Liquibase)/i)
@@ -237,16 +250,89 @@ test('README and security policy expose governance entry points and production b
   assert.match(readme, /5%/)
 
   assert.match(security, /漏洞报告/)
+  assert.match(security, /https:\/\/github\.com\/tt88737\/OPC\/security\/advisories\/new/)
   assert.match(security, /密钥泄露/)
   assert.match(security, /(?:最小权限|最小特权)/)
   assert.match(security, /生产[^\n]*(?:边界|环境)/)
   assert.match(security, /(?:轮换|吊销)/)
 })
 
-test('governance findings record the observed local Node version deviation', async () => {
+test('governance findings record the stable Node toolchain standard', async () => {
   const findings = await repositoryFile('findings.md')
 
-  assert.match(findings, /(?:实际观测|实际检测|本机)[^\n]*v22\.21\.0[^\n]*24\.15\.0/)
+  assert.match(findings, /标准工具链[^\n]*Node(?:\.js)? 24\.15\.0/)
+})
+
+async function runVersionConsistencyFixture({
+  pomVersion = '3.9.2',
+  frontendVersion = '3.9.2',
+  applicationYaml = 'opc:\n  version: 3.9.2\n',
+  expectedVersion
+} = {}) {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-version-consistency-'))
+  const pomPath = join(fixtureRoot, 'pom.xml')
+  const frontendPackagePath = join(fixtureRoot, 'package.json')
+  const applicationYamlPath = join(fixtureRoot, 'application.yml')
+  try {
+    await writeFile(pomPath, [
+      '<project xmlns="http://maven.apache.org/POM/4.0.0">',
+      `<modelVersion>4.0.0</modelVersion><groupId>com.opc</groupId><artifactId>opc</artifactId><version>${pomVersion}</version>`,
+      '</project>'
+    ].join(''), 'utf8')
+    await writeFile(frontendPackagePath, JSON.stringify({ name: 'opc', version: frontendVersion }), 'utf8')
+    await writeFile(applicationYamlPath, applicationYaml, 'utf8')
+
+    const args = [
+      '-NoProfile', '-ExecutionPolicy', 'Bypass',
+      '-File', fileURLToPath(new URL('../bin/verify-version-consistency.ps1', import.meta.url)),
+      '-PomPath', pomPath,
+      '-FrontendPackagePath', frontendPackagePath,
+      '-ApplicationYamlPath', applicationYamlPath
+    ]
+    if (expectedVersion !== undefined) args.push('-ExpectedVersion', expectedVersion)
+    return spawnSync(powerShellExecutable, args, { encoding: 'utf8' })
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true })
+  }
+}
+
+test('version consistency verifier accepts aligned versions and normalized release tags', async () => {
+  for (const expectedVersion of [undefined, '3.9.2', 'v3.9.2']) {
+    const result = await runVersionConsistencyFixture({ expectedVersion })
+    assert.equal(result.status, 0, result.stderr || result.stdout)
+    assert.match(result.stdout, /3\.9\.2/)
+  }
+})
+
+test('version consistency verifier rejects repository and expected version mismatches', async () => {
+  const repositoryMismatch = await runVersionConsistencyFixture({ frontendVersion: '3.9.3' })
+  const expectedMismatch = await runVersionConsistencyFixture({ expectedVersion: 'v3.9.3' })
+
+  assert.notEqual(repositoryMismatch.status, 0)
+  assert.match(repositoryMismatch.stderr + repositoryMismatch.stdout, /mismatch/i)
+  assert.notEqual(expectedMismatch.status, 0)
+  assert.match(expectedMismatch.stderr + expectedMismatch.stdout, /expected.*3\.9\.3|3\.9\.3.*expected/i)
+
+  for (const expectedVersion of ['3.9', 'v3.9.2-beta']) {
+    const invalidExpected = await runVersionConsistencyFixture({ expectedVersion })
+    assert.notEqual(invalidExpected.status, 0)
+    assert.match(invalidExpected.stderr + invalidExpected.stdout, /expected.*semver|semver.*expected/i)
+  }
+})
+
+test('version consistency verifier rejects ambiguous, non-scalar, and missing YAML versions', async () => {
+  const invalidDocuments = [
+    'opc:\n  version: 3.9.2\nopc:\n  version: 3.9.2\n',
+    'opc:\n  version: 3.9.2\n  version: 3.9.2\n',
+    'opc:\n  version:\n    major: 3\n',
+    'opc:\n  name: OPC\n'
+  ]
+
+  for (const applicationYaml of invalidDocuments) {
+    const result = await runVersionConsistencyFixture({ applicationYaml })
+    assert.notEqual(result.status, 0, applicationYaml)
+    assert.match(result.stderr + result.stdout, /application.*version|opc.*mapping|duplicate|scalar/i)
+  }
 })
 
 test('backend coverage uses a measured aggregate line baseline', async () => {
@@ -522,7 +608,7 @@ test('CI uses Java 21 and a supported Node 24 release', async () => {
 
   assert.match(workflow, /java-version:\s*['"]?21/)
   assert.match(workflow, /cache:\s*['"]?maven/)
-  assert.match(workflow, /node-version:\s*['"]?24/)
+  assert.match(workflow, /node-version:\s*['"]?24\.15\.0/)
   assert.match(workflow, /verify-foundation\.ps1/)
   assert.match(workflow, /choco install ripgrep --yes --no-progress/)
   assert.match(workflow, /rg --version/)

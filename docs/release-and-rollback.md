@@ -12,8 +12,16 @@
    powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
    ```
 
-4. 如需单独复核后端发布包，在 Windows 上执行 `mvnw.cmd clean verify`；其他平台执行 `./mvnw clean verify`。前端依赖使用 `npm ci`，不得用未锁定安装替代。
-5. 保存构建产物及其 SHA-256 校验记录，至少包括 `opc-admin/target/opc-admin.jar`、前端 `frontend/dist/` 归档、提交 SHA、构建时间和构建环境版本。部署前再次计算校验值并与记录比对。
+   统一验证入口当前仅支持 Windows PowerShell。非 Windows 发布准备必须在 Windows VM 或 Windows CI runner 中执行完整门禁；`./mvnw clean verify` 或任何局部检查不得替代完整门禁。
+
+4. 创建 tag 前校验 tag 版本与仓库三处版本一致，将占位符替换为待发布 tag：
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-version-consistency.ps1 -ExpectedVersion vMAJOR.MINOR.PATCH
+   ```
+
+5. 如需单独复核后端发布包，在 Windows 上执行 `mvnw.cmd clean verify`。前端依赖使用 `npm ci`，不得用未锁定安装替代；这些局部命令只用于诊断或复核。
+6. 保存构建产物及其 SHA-256 校验记录，至少包括 `opc-admin/target/opc-admin.jar`、前端 `frontend/dist/` 归档、提交 SHA、构建时间和构建环境版本。部署前再次计算校验值并与记录比对。
 
 ## 上线前检查
 
@@ -37,7 +45,13 @@
 
 ## 回滚
 
-触发条件包括健康检查失败、错误率或延迟越过发布阈值、安全边界失效、数据校验异常。回滚负责人应立即停止流量扩展并记录开始时间。
+触发条件包括健康检查失败、错误率或延迟越过发布阈值、安全边界失效、数据校验异常。按故障类型先止损：
+
+- 数据异常：立即摘流或隔离写流量并保留证据和数据现场，停止可能扩大影响的数据库或应用写操作。
+- 安全边界失效：立即摘流或隔离受影响服务，吊销暴露的凭据并保留证据和审计现场，不得通过关闭安全控制恢复流量。
+- 应用或配置故障：冻结继续发布并保留失败输出；在隔离环境完成上一版本应用与配置的兼容性验证后，再以原子方式执行应用和配置切换，避免半完成状态。
+
+回滚负责人应记录触发条件、开始时间、影响范围和止损动作。完成上述隔离、证据保全和兼容性验证后再执行回滚。
 
 回滚顺序为应用 → 配置 → 数据库：先恢复上一版本应用产物并核对 SHA-256，再恢复上一版受控配置；只有在应用和配置回滚不能恢复服务，且已确认数据影响后，才按演练过的恢复步骤回滚数据库。完成后重新执行全部健康检查。
 

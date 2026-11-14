@@ -31,4 +31,6 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
 ```
 
+该统一验证入口当前仅支持 Windows PowerShell。非 Windows 开发者必须在 Windows VM 或 Windows CI runner 中执行完整门禁；`./mvnw`、单项前端命令或其他局部检查不得替代完整门禁，也不得据此声称统一验证已经通过。
+
 命令失败时不得绕过、忽略或以手工挑选的子命令结果替代。应修复失败，重新运行完整命令，并在 PR 中记录结果；确因基础设施故障无法验证时，不得合并，需保留错误输出并交由维护者处理。

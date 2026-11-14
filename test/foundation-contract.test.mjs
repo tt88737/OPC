@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
 const rootUrl = new URL('../', import.meta.url)
+const frontendRoot = fileURLToPath(new URL('../frontend/', import.meta.url))
 const powerShellExecutable = process.platform === 'win32' ? 'powershell.exe' : 'pwsh'
 const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url))
 const { parse: parseYaml } = requireFromFrontend('yaml')
@@ -49,6 +51,128 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /Push-Location\s+\$repoRoot/)
   assert.match(script, /\$LASTEXITCODE/)
   assert.match(script, /exit\s+\$stageExitCode/)
+})
+
+test('Java and frontend quality gates run before tests and builds', async () => {
+  const pom = await repositoryFile('pom.xml')
+  const frontendPackage = JSON.parse(await repositoryFile('frontend/package.json'))
+  const verifier = await repositoryFile('bin/verify-foundation.ps1')
+
+  assert.match(pom, /<artifactId>maven-checkstyle-plugin<\/artifactId>/)
+  assert.match(pom, /<version>3\.6\.0<\/version>/)
+  assert.match(pom, /<configLocation>\$\{maven\.multiModuleProjectDirectory\}\/config\/checkstyle\/checkstyle\.xml<\/configLocation>/)
+  assert.equal(frontendPackage.scripts.lint, 'eslint .')
+  assert.equal(frontendPackage.scripts['format:check'], 'prettier --check .')
+
+  const orderedStages = [
+    'mvnw.cmd checkstyle:check',
+    'npm run lint',
+    'npm run format:check',
+    'mvnw.cmd clean test',
+    'foundation contract tests',
+    'npm test',
+    'npm run build:prod'
+  ]
+  let previous = -1
+  for (const stage of orderedStages) {
+    const current = verifier.indexOf(stage)
+    assert.ok(current > previous, `${stage} must appear after the previous quality stage`)
+    previous = current
+  }
+})
+
+test('quality gate configuration is repository-owned and migration-safe', async () => {
+  const checkstyle = await repositoryFile('config/checkstyle/checkstyle.xml')
+  const eslint = await repositoryFile('frontend/eslint.config.js')
+  const eslintConfig = (await import(new URL('frontend/eslint.config.js', rootUrl))).default
+  const prettierConfig = JSON.parse(await repositoryFile('frontend/.prettierrc.json'))
+  const prettierIgnore = await repositoryFile('frontend/.prettierignore')
+  const frontendPackage = JSON.parse(await repositoryFile('frontend/package.json'))
+  const packageLock = JSON.parse(await repositoryFile('frontend/package-lock.json'))
+
+  assert.match(checkstyle, /<module name="Checker">/)
+  assert.match(checkstyle, /<module name="TreeWalker">/)
+  for (const rule of ['EmptyStatement', 'NoFinalizer', 'OneStatementPerLine', 'OuterTypeFilename']) {
+    assert.match(checkstyle, new RegExp(`<module name="${rule}"\\s*\/>`))
+  }
+  assert.match(eslint, /import js from ['"]@eslint\/js['"]/)
+  assert.match(eslint, /import pluginVue from ['"]eslint-plugin-vue['"]/)
+  assert.match(eslint, /pluginVue\.configs\[['"]flat\/essential['"]\]/)
+  assert.match(eslint, /autoImportGlobals\.globals/)
+  assert.match(eslint, /export default\s*\[/)
+  const eslintIgnorePatterns = eslintConfig.flatMap(configuration => configuration.ignores ?? [])
+  for (const generatedPattern of ['node_modules/**', 'dist/**', 'coverage/**']) {
+    assert.ok(eslintIgnorePatterns.includes(generatedPattern), `${generatedPattern} must be ignored by ESLint`)
+  }
+  for (const configuration of eslintConfig) {
+    const disabledRules = Object.entries(configuration.rules ?? {}).filter(([rule, value]) => {
+      const severity = Array.isArray(value) ? value[0] : value
+      return (rule === 'no-undef' || rule === 'no-unused-vars' || rule.startsWith('vue/')) &&
+        (severity === 'off' || severity === 0)
+    })
+    if (disabledRules.length === 0) continue
+    assert.ok(configuration.files?.length, `${disabledRules.map(([rule]) => rule).join(', ')} need exact files`)
+    for (const file of configuration.files) {
+      assert.doesNotMatch(file, /[*?\[\]{}!]/, `${file} must be an exact ESLint exception`)
+      const fileInfo = await stat(new URL(`frontend/${file}`, rootUrl))
+      assert.ok(fileInfo.isFile(), `${file} must name an existing ESLint exception file`)
+    }
+  }
+  assert.equal(prettierConfig.endOfLine, 'auto')
+
+  const ignoreEntries = prettierIgnore
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#'))
+  const generatedDirectories = ['node_modules/', 'dist/', 'coverage/', 'public/']
+  for (const generatedPath of generatedDirectories) {
+    assert.ok(ignoreEntries.includes(generatedPath), `${generatedPath} must be ignored`)
+  }
+  const legacyFiles = ignoreEntries.filter(entry => !generatedDirectories.includes(entry))
+  for (const entry of legacyFiles) {
+    assert.ok(!entry.endsWith('/'), `${entry} must not ignore a directory`)
+    assert.doesNotMatch(entry, /[*?\[\]{}!]/, `${entry} must not use a glob pattern`)
+    assert.doesNotMatch(entry, /(^|[\\/])\.\.([\\/]|$)|^[\\/]/, `${entry} must stay inside frontend`)
+    const fileInfo = await stat(new URL(`frontend/${entry}`, rootUrl))
+    assert.ok(fileInfo.isFile(), `${entry} must name an existing file`)
+  }
+  assert.equal(legacyFiles.length, 151)
+
+  const qualityTools = ['@eslint/js', 'eslint', 'eslint-plugin-vue', 'globals', 'prettier']
+  for (const tool of qualityTools) {
+    const declaredVersion = frontendPackage.devDependencies[tool]
+    assert.match(declaredVersion, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/, `${tool} must use an exact version`)
+    assert.equal(packageLock.packages[''].devDependencies[tool], declaredVersion)
+    assert.equal(packageLock.packages[`node_modules/${tool}`].version, declaredVersion)
+  }
+})
+
+test('ESLint rejects new JavaScript and Vue correctness violations', async () => {
+  const fixtureRoot = await mkdtemp(join(frontendRoot, '.foundation-eslint-'))
+  const eslintExecutable = join(frontendRoot, 'node_modules', 'eslint', 'bin', 'eslint.js')
+  try {
+    const javascriptFixture = join(fixtureRoot, 'new-module.js')
+    const vueFixture = join(fixtureRoot, 'NewComponent.vue')
+    await writeFile(javascriptFixture, 'const unusedValue = missingGlobal\n', 'utf8')
+    await writeFile(vueFixture, '<template><div id="first" id="second" /></template>\n', 'utf8')
+
+    const javascriptResult = spawnSync(process.execPath, [eslintExecutable, javascriptFixture], {
+      cwd: frontendRoot,
+      encoding: 'utf8'
+    })
+    assert.notEqual(javascriptResult.status, 0, javascriptResult.stderr || javascriptResult.stdout)
+    assert.match(javascriptResult.stdout, /no-undef/)
+    assert.match(javascriptResult.stdout, /no-unused-vars/)
+
+    const vueResult = spawnSync(process.execPath, [eslintExecutable, vueFixture], {
+      cwd: frontendRoot,
+      encoding: 'utf8'
+    })
+    assert.notEqual(vueResult.status, 0, vueResult.stderr || vueResult.stdout)
+    assert.match(vueResult.stdout, /vue\/no-duplicate-attributes/)
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true })
+  }
 })
 
 test('repository pins Maven wrapper and documents wrapper builds', async () => {

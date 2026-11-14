@@ -221,16 +221,24 @@ test('CI always uploads the real aggregate JaCoCo report with a pinned action', 
   assert.match(workflow, new RegExp(`uses:\\s*actions/upload-artifact@${PINNED_ACTIONS['actions/upload-artifact'].sha}\\s+# ${PINNED_ACTIONS['actions/upload-artifact'].version}`))
 })
 
-async function runAggregateCoverageFixture({ missed, covered, groups = 6 }) {
+async function runAggregateCoverageFixture({
+  missed,
+  covered,
+  groups = 6,
+  groupNames,
+  emptyPackageIndex = -1,
+  threshold = '0.20'
+}) {
   const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-aggregate-coverage-'))
   const pomPath = join(fixtureRoot, 'pom.xml')
   const reportPath = join(fixtureRoot, 'jacoco.xml')
-  const groupXml = Array.from({ length: groups }, (_, index) =>
-    `<group name="module-${index}"><package name="com/opc/module${index}" /></group>`
+  const names = groupNames ?? Array.from({ length: groups }, (_, index) => `module-${index}`)
+  const groupXml = names.map((name, index) =>
+    `<group name="${name}">${index === emptyPackageIndex ? '' : `<package name="com/opc/module${index}" />`}</group>`
   ).join('')
   await writeFile(pomPath, [
     '<project xmlns="http://maven.apache.org/POM/4.0.0">',
-    '<properties><jacoco.minimum.line.ratio>0.20</jacoco.minimum.line.ratio></properties>',
+    `<properties><jacoco.minimum.line.ratio>${threshold}</jacoco.minimum.line.ratio></properties>`,
     '<modules>',
     ...Array.from({ length: 6 }, (_, index) => `<module>module-${index}</module>`),
     '<module>opc-coverage</module>',
@@ -273,6 +281,40 @@ test('aggregate coverage verifier rejects empty, below-baseline, or incomplete r
   assert.match(belowBaseline.stderr + belowBaseline.stdout, /below/i)
   assert.notEqual(missingModule.status, 0)
   assert.match(missingModule.stderr + missingModule.stdout, /missing.*module-5|module set/i)
+})
+
+test('aggregate coverage verifier rejects an expected module without packages', async () => {
+  const result = await runAggregateCoverageFixture({ missed: 70, covered: 30, emptyPackageIndex: 3 })
+
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr + result.stdout, /no business packages.*module-3/i)
+})
+
+test('aggregate coverage verifier rejects thresholds outside the inclusive upper unit interval', async () => {
+  for (const threshold of ['-0.01', '0', '1.01']) {
+    const result = await runAggregateCoverageFixture({ missed: 0, covered: 100, threshold })
+
+    assert.notEqual(result.status, 0, `threshold ${threshold} must fail`)
+    assert.match(result.stderr + result.stdout, /greater than 0.*at most 1/i)
+  }
+})
+
+test('aggregate coverage verifier rejects empty and duplicate group names', async () => {
+  const emptyName = await runAggregateCoverageFixture({
+    missed: 70,
+    covered: 30,
+    groupNames: ['module-0', 'module-1', '', 'module-3', 'module-4', 'module-5']
+  })
+  const duplicateName = await runAggregateCoverageFixture({
+    missed: 70,
+    covered: 30,
+    groupNames: ['module-0', 'module-1', 'module-2', 'module-3', 'module-4', 'module-4']
+  })
+
+  assert.notEqual(emptyName.status, 0)
+  assert.match(emptyName.stderr + emptyName.stdout, /group names.*empty/i)
+  assert.notEqual(duplicateName.status, 0)
+  assert.match(duplicateName.stderr + duplicateName.stdout, /duplicate.*module-4/i)
 })
 
 test('foundation verifier propagates a failing child exit code', async () => {

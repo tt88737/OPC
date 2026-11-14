@@ -38,6 +38,9 @@ if (-not [decimal]::TryParse(
 )) {
     Fail-CoverageVerification 'jacoco.minimum.line.ratio must be a decimal POM property'
 }
+if ($threshold -le [decimal] 0 -or $threshold -gt [decimal] 1) {
+    Fail-CoverageVerification 'jacoco.minimum.line.ratio must be greater than 0 and at most 1'
+}
 
 $lineCounter = @($report.report.counter | Where-Object { $_.type -eq 'LINE' })
 $instructionCounter = @($report.report.counter | Where-Object { $_.type -eq 'INSTRUCTION' })
@@ -55,7 +58,16 @@ if ($lineTotal -le 0 -or $instructionTotal -le 0) {
 
 $expectedModules = @($pom.project.modules.module | ForEach-Object { [string] $_ } | Where-Object { $_ -ne 'opc-coverage' } | Sort-Object -Unique)
 $groups = @($report.report.group)
-$actualModules = @($groups | ForEach-Object { [string] $_.name } | Sort-Object -Unique)
+$actualModules = @($groups | ForEach-Object { [string] $_.name })
+if (@($actualModules | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+    Fail-CoverageVerification 'aggregate group names must not be empty'
+}
+
+$duplicateModules = @($actualModules | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Name })
+if ($duplicateModules.Count -gt 0) {
+    Fail-CoverageVerification "aggregate report contains duplicate group names: $($duplicateModules -join ', ')"
+}
+
 $missingModules = @($expectedModules | Where-Object { $_ -notin $actualModules })
 $unexpectedModules = @($actualModules | Where-Object { $_ -notin $expectedModules })
 if (
@@ -67,7 +79,7 @@ if (
     Fail-CoverageVerification "aggregate module set mismatch; missing: $($missingModules -join ', '); unexpected: $($unexpectedModules -join ', ')"
 }
 
-$emptyPackageModules = @($groups | Where-Object { @($_.package).Count -eq 0 } | ForEach-Object { [string] $_.name })
+$emptyPackageModules = @($groups | Where-Object { $_.SelectNodes('./package').Count -eq 0 } | ForEach-Object { [string] $_.name })
 if ($emptyPackageModules.Count -gt 0) {
     Fail-CoverageVerification "aggregate modules contain no business packages: $($emptyPackageModules -join ', ')"
 }

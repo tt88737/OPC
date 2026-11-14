@@ -185,7 +185,7 @@ test('OPC banner and license documentation contain no upstream template residue'
   assert.match(banner, /OPC/)
   assert.doesNotMatch(banner, /佛祖|永无\s*BUG|永不宕机|_ooOoo_|o8888888o/i)
   assert.match(readme, /LICENSE[^\n]*OPC|OPC[^\n]*LICENSE/)
-  assert.match(readme, /THIRD_PARTY_NOTICES\.md/)
+  assert.doesNotMatch(readme, /THIRD_PARTY_NOTICES\.md/)
 })
 
 test('CI uses Java 17 and a supported Node 24 release', async () => {

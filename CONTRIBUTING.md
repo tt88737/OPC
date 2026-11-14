@@ -13,7 +13,7 @@
 
 ## 分支与提交
 
-`main` 只能通过 Pull Request（PR）合并，禁止直接推送。GitHub 分支保护严格要求 `verify` 状态检查成功，并需要至少 1 名审查者批准；管理员不可绕过保护，强制推送和删除分支均被禁止。建议采用用途明确的分支命名，例如 `feat/short-topic`、`fix/short-topic`、`docs/short-topic` 或 `chore/short-topic`。
+`main` 只能通过 Pull Request（PR）合并，禁止直接推送。GitHub 经典分支保护严格要求 `verify` 状态检查成功，并禁止强制推送和删除分支；独立的 `main-review-approval` ruleset 规定日常合并至少需要 1 名审查者批准。建议采用用途明确的分支命名，例如 `feat/short-topic`、`fix/short-topic`、`docs/short-topic` 或 `chore/short-topic`。
 
 提交信息应遵循 Conventional Commits，例如 `feat: add account lockout`、`fix: reject invalid token`、`docs: clarify deployment checks`。若工具或历史原因无法严格遵循，也必须使用简短、祈使语气且能清楚说明变更目的的格式。
 
@@ -22,6 +22,8 @@
 每个 PR 应保持最小变更范围，只解决一个清晰问题；无关重构、格式化或依赖升级应拆分。PR 描述至少说明目的、风险、验证结果以及配置或数据库影响。
 
 合并前必须由至少一名未参与主要实现的维护者完成审查，所有讨论和阻塞意见必须解决；新的提交会撤销过期批准。涉及认证、授权、秘密处理、生产配置或数据库变更时，应邀请相应领域维护者审查。
+
+管理员仅在事故处置、安全修复或无可用独立审查者时，才能在 PR 中应急绕过审批；管理员绕过审批时 `verify` 仍须通过，且禁止直接推送、禁止强制推送和禁止删除分支。应急 PR 必须记录绕过理由、风险和验证结果，事后补审并复盘。
 
 ## 必须验证
 

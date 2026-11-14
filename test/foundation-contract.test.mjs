@@ -231,7 +231,10 @@ test('contribution and release governance documents are tracked and actionable',
   assert.match(release, /应用[^\n]*配置[^\n]*数据库/)
   assert.match(release, /数据异常[^\n]*(?:摘流|隔离写流量)[^\n]*(?:证据|现场)/)
   assert.match(release, /安全边界失效[^\n]*(?:摘流|隔离)[^\n]*(?:证据|现场)/)
-  assert.match(release, /兼容性验证[^\n]*原子[^\n]*(?:应用|配置)[^\n]*切换/)
+  assert.match(release, /应用[^\n]*匹配配置[^\n]*(?:同一|一个)回滚单元[^\n]*原子/)
+  assert.match(release, /平台[^\n]*不能[^\n]*原子[^\n]*(?:摘流|写隔离)[^\n]*兼容[^\n]*顺序[^\n]*全部成功[^\n]*恢复流量/)
+  assert.match(release, /之后[^\n]*评估数据库/)
+  assert.doesNotMatch(release, /回滚顺序为应用\s*→\s*配置/)
   assert.match(release, /不可逆[^\n]*(?:迁移|变更)/)
   assert.match(release, /(?:失败证据|审计记录)/)
   assert.doesNotMatch(release, /(?:已经|当前已|现已)(?:引入|使用|集成)[^\n]*(?:Flyway|Liquibase)/i)
@@ -324,6 +327,10 @@ test('version consistency verifier rejects ambiguous, non-scalar, and missing YA
   const invalidDocuments = [
     'opc:\n  version: 3.9.2\nopc:\n  version: 3.9.2\n',
     'opc:\n  version: 3.9.2\n  version: 3.9.2\n',
+    'opc:\n  version:3.9.2\n',
+    'opc:\n version: 3.9.2\n',
+    'opc:\n    version: 3.9.2\n',
+    'opc:\n\tversion: 3.9.2\n',
     'opc:\n  version:\n    major: 3\n',
     'opc:\n  name: OPC\n'
   ]
@@ -331,7 +338,7 @@ test('version consistency verifier rejects ambiguous, non-scalar, and missing YA
   for (const applicationYaml of invalidDocuments) {
     const result = await runVersionConsistencyFixture({ applicationYaml })
     assert.notEqual(result.status, 0, applicationYaml)
-    assert.match(result.stderr + result.stdout, /application.*version|opc.*mapping|duplicate|scalar/i)
+    assert.match(result.stderr + result.stdout, /application.*version|opc.*mapping|duplicate|scalar|tab|indentation/i)
   }
 })
 

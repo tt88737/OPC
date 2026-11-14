@@ -50,66 +50,53 @@ function Assert-SemVer {
 function Read-ApplicationVersion {
     param([string] $Path)
 
-    $entries = @()
-    $lineNumber = 0
-    foreach ($line in [IO.File]::ReadAllLines($Path, [Text.Encoding]::UTF8)) {
-        $lineNumber++
+    $lines = [IO.File]::ReadAllLines($Path, [Text.Encoding]::UTF8)
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($lines[$index].Contains("`t")) {
+            Fail-VersionVerification "application YAML contains a tab at line $($index + 1)"
+        }
+    }
+
+    $opcLineIndexes = @(for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($lines[$index] -match '^opc\s*:') {
+            $index
+        }
+    })
+    if ($opcLineIndexes.Count -ne 1) {
+        Fail-VersionVerification 'application YAML must contain exactly one top-level opc mapping'
+    }
+    $opcLineIndex = $opcLineIndexes[0]
+    if ($lines[$opcLineIndex] -notmatch '^opc:\s*(?:#.*)?$') {
+        Fail-VersionVerification 'application YAML top-level opc must be an exclusive mapping line'
+    }
+
+    $blockEndIndex = $lines.Count
+    for ($index = $opcLineIndex + 1; $index -lt $lines.Count; $index++) {
+        $line = $lines[$index]
         if ($line -match '^\s*$' -or $line -match '^\s*#') {
             continue
         }
-        if ($line -match '^\t|^ +\t') {
-            Fail-VersionVerification "application YAML uses a tab for indentation at line $lineNumber"
-        }
-        if ($line -notmatch '^(?<indent> *)(?<key>[^:#][^:]*):(?<value>.*)$') {
-            continue
-        }
-        $entries += [pscustomobject]@{
-            Indent = $Matches.indent.Length
-            Key = $Matches.key.Trim()
-            Value = $Matches.value
-            Line = $lineNumber
+        if ($line -notmatch '^ ') {
+            $blockEndIndex = $index
+            break
         }
     }
 
-    $opcEntries = @($entries | Where-Object { $_.Indent -eq 0 -and $_.Key -eq 'opc' })
-    if ($opcEntries.Count -ne 1) {
-        Fail-VersionVerification 'application YAML must contain exactly one top-level opc mapping'
-    }
-    $opcEntry = $opcEntries[0]
-    $opcValue = ($opcEntry.Value -replace '\s+#.*$', '').Trim()
-    if ($opcValue.Length -ne 0) {
-        Fail-VersionVerification 'application YAML top-level opc value must be a mapping'
-    }
-
-    $opcChildren = @($entries | Where-Object {
-        $_.Line -gt $opcEntry.Line -and $_.Indent -gt 0
+    $versionLineIndexes = @(for ($index = $opcLineIndex + 1; $index -lt $blockEndIndex; $index++) {
+        if ($lines[$index] -match '^ +version\s*:') {
+            $index
+        }
     })
-    $nextTopLevel = @($entries | Where-Object {
-        $_.Line -gt $opcEntry.Line -and $_.Indent -eq 0
-    } | Sort-Object Line | Select-Object -First 1)
-    if ($nextTopLevel.Count -eq 1) {
-        $opcChildren = @($opcChildren | Where-Object { $_.Line -lt $nextTopLevel[0].Line })
-    }
-    if ($opcChildren.Count -eq 0) {
-        Fail-VersionVerification 'application YAML opc mapping is empty or missing version'
-    }
-
-    $directIndent = ($opcChildren | Measure-Object Indent -Minimum).Minimum
-    $versionEntries = @($opcChildren | Where-Object {
-        $_.Indent -eq $directIndent -and $_.Key -eq 'version'
-    })
-    if ($versionEntries.Count -ne 1) {
+    if ($versionLineIndexes.Count -ne 1) {
         Fail-VersionVerification 'application YAML opc mapping must contain exactly one version entry'
     }
 
-    $value = ($versionEntries[0].Value -replace '\s+#.*$', '').Trim()
-    if (
-        $value.Length -eq 0 -or
-        $value.StartsWith('[') -or
-        $value.StartsWith('{') -or
-        $value.StartsWith('|') -or
-        $value.StartsWith('>')
-    ) {
+    $versionLine = $lines[$versionLineIndexes[0]]
+    if ($versionLine -notmatch '^  version: +(?<value>[^#]*?)(?: +#.*)? *$') {
+        Fail-VersionVerification 'application YAML opc.version must use two-space indentation and a space before its scalar value'
+    }
+    $value = $Matches.value.Trim()
+    if ($value.Length -eq 0) {
         Fail-VersionVerification 'application YAML opc.version must be a scalar value'
     }
     if (

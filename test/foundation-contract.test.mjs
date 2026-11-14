@@ -51,6 +51,18 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /exit\s+\$stageExitCode/)
 })
 
+test('repository pins Maven wrapper and documents wrapper builds', async () => {
+  const wrapperProperties = await repositoryFile('.mvn/wrapper/maven-wrapper.properties')
+  const readme = await repositoryFile('README.md')
+  const verifier = await repositoryFile('bin/verify-foundation.ps1')
+
+  assert.match(wrapperProperties, /distributionUrl=.*apache-maven-3\.9\./)
+  assert.match(await repositoryFile('mvnw'), /Maven Wrapper/)
+  assert.match(await repositoryFile('mvnw.cmd'), /Maven Wrapper/)
+  assert.match(readme, /mvnw(?:\.cmd)?\s+(?:clean\s+)?(?:test|package|verify)/)
+  assert.match(verifier, /mvnw\.cmd\s+clean\s+test/)
+})
+
 test('foundation verifier propagates a failing child exit code', async () => {
   const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-foundation-exit-'))
   try {

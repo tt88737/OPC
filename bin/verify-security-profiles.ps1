@@ -101,7 +101,7 @@ Assert-Matches $configDataTest 'Profiles\.of\("dev"\)' 'Profile integration test
 Assert-Matches $configDataTest 'Profiles\.of\("prod"\)' 'Profile integration tests must verify the prod profile.'
 Assert-Matches $configDataTest 'Profiles\.of\("datasource"\)' 'Profile integration tests must verify the datasource profile group.'
 Assert-Matches $configDataTest 'SystemEnvironmentPropertySource' 'Profile integration tests must probe standard environment-style overrides.'
-Assert-Matches $readme '(?m)^mvn clean package\s*$' 'README must use mvn clean package to prevent stale resources.'
+Assert-Matches $readme '(?m)^\.\/mvnw clean package\s*$' 'README must use the Maven Wrapper clean package command to prevent stale resources.'
 
 if ($errors.Count -gt 0) {
     foreach ($errorMessage in $errors) {

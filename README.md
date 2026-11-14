@@ -29,10 +29,10 @@ OPC/
 1. 创建 MySQL 数据库并执行 `sql/opc_20260417.sql`。
 2. 将 `opc-local.env.example.ps1` 复制为被 Git 忽略的 `opc-local.env.ps1`，替换其中的占位值后加载环境变量。首次启动必须设置一次性 `OPC_BOOTSTRAP_ADMIN_PASSWORD`；引导成功后立即删除该变量并修改管理员密码。
 3. 默认使用 `dev` profile。开发环境可通过 `OPC_SPRINGDOC_ENABLED` 控制接口文档；Druid 默认关闭，仅在同时配置非空 `OPC_DRUID_USERNAME`、`OPC_DRUID_PASSWORD` 后才可设置 `OPC_DRUID_ENABLED=true`。
-4. 使用 Java 21 和 Maven 构建：
+4. 使用 Java 21 和仓库固定的 Maven Wrapper 构建：
 
 ```bash
-mvn clean package
+./mvnw clean package
 ```
 
 其中 `clean` 会先删除上次构建输出，避免已删除或已改名的配置资源残留在 `target` 和最终 JAR 中。
@@ -55,7 +55,7 @@ npm run dev
 
 ## 构建验证与持续集成
 
-本地需要 Java 21、Maven、Node.js 24.15.0 或更高的 Node 24 版本，以及 `git`、`rg`。在仓库根目录执行统一验证入口：
+本地需要 Java 21、Node.js 24.15.0 或更高的 Node 24 版本，以及 `git`、`rg`。Maven 由仓库中的 Wrapper 固定。在仓库根目录执行统一验证入口：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1

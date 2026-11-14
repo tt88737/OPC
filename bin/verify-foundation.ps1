@@ -34,7 +34,7 @@ try {
     Invoke-FoundationStage 'verify-swagger-annotations.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-swagger-annotations.ps1')
     }
-    Invoke-FoundationStage 'mvn test' { & mvn test }
+    Invoke-FoundationStage 'mvnw.cmd clean test' { & (Join-Path $repoRoot 'mvnw.cmd') clean test }
 
     Push-Location (Join-Path $repoRoot 'frontend')
     try {

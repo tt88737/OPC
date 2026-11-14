@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $ReportPath) {
-    $ReportPath = Join-Path $repoRoot 'opc-admin/target/site/jacoco-aggregate/jacoco.xml'
+    $ReportPath = Join-Path $repoRoot 'opc-coverage/target/site/jacoco-aggregate/jacoco.xml'
 }
 if (-not $PomPath) {
     $PomPath = Join-Path $repoRoot 'pom.xml'
@@ -53,10 +53,23 @@ if ($lineTotal -le 0 -or $instructionTotal -le 0) {
     Fail-CoverageVerification 'aggregate report is empty'
 }
 
+$expectedModules = @($pom.project.modules.module | ForEach-Object { [string] $_ } | Where-Object { $_ -ne 'opc-coverage' } | Sort-Object -Unique)
 $groups = @($report.report.group)
-$packages = @($report.report.group.package)
-if ($groups.Count -lt 2 -or $packages.Count -lt 2) {
-    Fail-CoverageVerification 'aggregate report must contain multiple modules and business packages'
+$actualModules = @($groups | ForEach-Object { [string] $_.name } | Sort-Object -Unique)
+$missingModules = @($expectedModules | Where-Object { $_ -notin $actualModules })
+$unexpectedModules = @($actualModules | Where-Object { $_ -notin $expectedModules })
+if (
+    $expectedModules.Count -eq 0 -or
+    $actualModules.Count -ne $expectedModules.Count -or
+    $missingModules.Count -gt 0 -or
+    $unexpectedModules.Count -gt 0
+) {
+    Fail-CoverageVerification "aggregate module set mismatch; missing: $($missingModules -join ', '); unexpected: $($unexpectedModules -join ', ')"
+}
+
+$emptyPackageModules = @($groups | Where-Object { @($_.package).Count -eq 0 } | ForEach-Object { [string] $_.name })
+if ($emptyPackageModules.Count -gt 0) {
+    Fail-CoverageVerification "aggregate modules contain no business packages: $($emptyPackageModules -join ', ')"
 }
 
 $ratio = [decimal] $lineCovered / [decimal] $lineTotal

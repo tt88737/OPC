@@ -189,6 +189,7 @@ test('repository pins Maven wrapper and documents wrapper builds', async () => {
 
 test('backend coverage uses a measured aggregate line baseline', async () => {
   const pom = await repositoryFile('pom.xml')
+  const coveragePom = await repositoryFile('opc-coverage/pom.xml')
   const verifier = await repositoryFile('bin/verify-foundation.ps1')
 
   assert.match(pom, /<jacoco\.version>\d+\.\d+\.\d+<\/jacoco\.version>/)
@@ -197,9 +198,12 @@ test('backend coverage uses a measured aggregate line baseline', async () => {
   assert.ok(Number(minimum[1]) > 0 && Number(minimum[1]) < 1)
   assert.match(pom, /<artifactId>jacoco-maven-plugin<\/artifactId>/)
   assert.match(pom, /<goal>prepare-agent<\/goal>/)
-  assert.match(pom, /<goal>report-aggregate<\/goal>/)
-  assert.match(pom, /<includeCurrentProject>true<\/includeCurrentProject>/)
-  assert.match(pom, /<formats>[\s\S]*<format>HTML<\/format>[\s\S]*<format>XML<\/format>[\s\S]*<\/formats>/)
+  assert.match(pom, /<module>opc-coverage<\/module>\s*<\/modules>/)
+  assert.match(coveragePom, /<goal>report-aggregate<\/goal>/)
+  assert.match(coveragePom, /<formats>[\s\S]*<format>HTML<\/format>[\s\S]*<format>XML<\/format>[\s\S]*<\/formats>/)
+  for (const module of ['opc-admin', 'opc-framework', 'opc-system', 'opc-quartz', 'opc-generator', 'opc-common']) {
+    assert.match(coveragePom, new RegExp(`<dependency>[\\s\\S]*?<artifactId>${module}</artifactId>[\\s\\S]*?<version>\\$\\{opc\\.version\\}</version>[\\s\\S]*?</dependency>`))
+  }
   assert.match(verifier, /mvnw\.cmd['"]?\)?\s+clean\s+verify/)
   assert.match(verifier, /verify-aggregate-coverage\.ps1/)
 })
@@ -213,11 +217,11 @@ test('CI always uploads the real aggregate JaCoCo report with a pinned action', 
   assert.equal(upload.if, 'always()')
   assert.equal(upload.uses, `actions/upload-artifact@${PINNED_ACTIONS['actions/upload-artifact'].sha}`)
   assert.equal(upload.with.name, 'jacoco-aggregate-report')
-  assert.equal(upload.with.path, 'opc-admin/target/site/jacoco-aggregate')
+  assert.equal(upload.with.path, 'opc-coverage/target/site/jacoco-aggregate')
   assert.match(workflow, new RegExp(`uses:\\s*actions/upload-artifact@${PINNED_ACTIONS['actions/upload-artifact'].sha}\\s+# ${PINNED_ACTIONS['actions/upload-artifact'].version}`))
 })
 
-async function runAggregateCoverageFixture({ missed, covered, groups = 2 }) {
+async function runAggregateCoverageFixture({ missed, covered, groups = 6 }) {
   const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-aggregate-coverage-'))
   const pomPath = join(fixtureRoot, 'pom.xml')
   const reportPath = join(fixtureRoot, 'jacoco.xml')
@@ -227,6 +231,10 @@ async function runAggregateCoverageFixture({ missed, covered, groups = 2 }) {
   await writeFile(pomPath, [
     '<project xmlns="http://maven.apache.org/POM/4.0.0">',
     '<properties><jacoco.minimum.line.ratio>0.20</jacoco.minimum.line.ratio></properties>',
+    '<modules>',
+    ...Array.from({ length: 6 }, (_, index) => `<module>module-${index}</module>`),
+    '<module>opc-coverage</module>',
+    '</modules>',
     '</project>'
   ].join(''), 'utf8')
   await writeFile(reportPath, [
@@ -254,17 +262,17 @@ test('aggregate coverage verifier accepts a populated multi-module report above 
   assert.match(result.stdout, /20\.00%/)
 })
 
-test('aggregate coverage verifier rejects empty or below-baseline reports', async () => {
+test('aggregate coverage verifier rejects empty, below-baseline, or incomplete reports', async () => {
   const empty = await runAggregateCoverageFixture({ missed: 0, covered: 0 })
   const belowBaseline = await runAggregateCoverageFixture({ missed: 90, covered: 10 })
-  const singleModule = await runAggregateCoverageFixture({ missed: 70, covered: 30, groups: 1 })
+  const missingModule = await runAggregateCoverageFixture({ missed: 70, covered: 30, groups: 5 })
 
   assert.notEqual(empty.status, 0)
   assert.match(empty.stderr + empty.stdout, /empty/i)
   assert.notEqual(belowBaseline.status, 0)
   assert.match(belowBaseline.stderr + belowBaseline.stdout, /below/i)
-  assert.notEqual(singleModule.status, 0)
-  assert.match(singleModule.stderr + singleModule.stdout, /multiple modules/i)
+  assert.notEqual(missingModule.status, 0)
+  assert.match(missingModule.stderr + missingModule.stdout, /missing.*module-5|module set/i)
 })
 
 test('foundation verifier propagates a failing child exit code', async () => {

@@ -36,7 +36,7 @@
         <swagger-ui.version>5.34.1</swagger-ui.version>
         <mysql.version>26.10.0</mysql.version>
         <jacoco.version>0.8.14</jacoco.version>
-        <!-- Measured aggregate LINE coverage: 149/2866 = 0.0519; keep a 0.0500 baseline. -->
+        <!-- Measured six-module aggregate LINE coverage: 403/7935 = 0.0508; keep a 0.0500 baseline. -->
         <jacoco.minimum.line.ratio>0.05</jacoco.minimum.line.ratio>
     </properties>
 
@@ -221,6 +221,7 @@
         <module>opc-quartz</module>
         <module>opc-generator</module>
         <module>opc-common</module>
+        <module>opc-coverage</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -237,20 +238,6 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>aggregate-report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                        </goals>
-                        <configuration>
-                            <includeCurrentProject>true</includeCurrentProject>
-                            <formats>
-                                <format>HTML</format>
-                                <format>XML</format>
-                            </formats>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

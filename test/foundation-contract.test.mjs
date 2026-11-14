@@ -187,6 +187,62 @@ test('repository pins Maven wrapper and documents wrapper builds', async () => {
   assert.match(verifier, /mvnw\.cmd\s+clean\s+verify/)
 })
 
+test('contribution and release governance documents are tracked and actionable', async () => {
+  const trackedFiles = spawnSync('git', ['ls-files', '--error-unmatch', 'CONTRIBUTING.md', 'docs/release-and-rollback.md'], {
+    cwd: fileURLToPath(rootUrl),
+    encoding: 'utf8'
+  })
+  assert.equal(trackedFiles.status, 0, trackedFiles.stderr || trackedFiles.stdout)
+
+  const contributing = await repositoryFile('CONTRIBUTING.md')
+  const release = await repositoryFile('docs/release-and-rollback.md')
+  const unifiedVerification = /powershell -NoProfile -ExecutionPolicy Bypass -File \.\\bin\\verify-foundation\.ps1/
+
+  assert.match(contributing, /main[^\n]*(?:Pull Request|PR)|(?:Pull Request|PR)[^\n]*main/i)
+  assert.match(contributing, /分支命名/)
+  assert.match(contributing, /Conventional Commits/)
+  assert.match(contributing, /最小[^\n]*(?:范围|变更)|(?:范围|变更)[^\n]*最小/)
+  assert.match(contributing, /审查/)
+  assert.match(contributing, unifiedVerification)
+  assert.match(contributing, /失败[^\n]*(?:不得|禁止)[^\n]*(?:绕过|忽略)/)
+  assert.match(contributing, /(?:敏感信息|密钥|凭据)[^\n]*(?:不得|禁止)[^\n]*提交/)
+  for (const toolchain of [/Java 21/, /Node(?:\.js)? 24\.15(?:\.0)?/, /Maven Wrapper/, /npm ci/]) {
+    assert.match(contributing, toolchain)
+  }
+
+  assert.match(release, /SemVer|语义化版本/)
+  assert.match(release, /tag/)
+  assert.match(release, /mvnw\.cmd clean verify/)
+  assert.match(release, unifiedVerification)
+  assert.match(release, /(?:构建产物|artifact)[^\n]*(?:校验|哈希|SHA-?256)/i)
+  assert.match(release, /生产[^\n]*配置[^\n]*检查/)
+  assert.match(release, /数据库[^\n]*(?:变更|迁移)[^\n]*备份|备份[^\n]*数据库/)
+  assert.match(release, /健康检查/)
+  assert.match(release, /应用[^\n]*配置[^\n]*数据库/)
+  assert.match(release, /不可逆[^\n]*(?:迁移|变更)/)
+  assert.match(release, /(?:失败证据|审计记录)/)
+  assert.doesNotMatch(release, /(?:已经|当前已|现已)(?:引入|使用|集成)[^\n]*(?:Flyway|Liquibase)/i)
+})
+
+test('README and security policy expose governance entry points and production boundaries', async () => {
+  const readme = await repositoryFile('README.md')
+  const security = await repositoryFile('SECURITY.md')
+
+  assert.match(readme, /CONTRIBUTING\.md/)
+  assert.match(readme, /docs\/release-and-rollback\.md/)
+  assert.match(readme, /powershell -NoProfile -ExecutionPolicy Bypass -File \.\\bin\\verify-foundation\.ps1/)
+  assert.match(readme, /Java 21/)
+  assert.match(readme, /Node(?:\.js)? 24\.15(?:\.0)?/)
+  assert.match(readme, /JaCoCo/)
+  assert.match(readme, /5%/)
+
+  assert.match(security, /漏洞报告/)
+  assert.match(security, /密钥泄露/)
+  assert.match(security, /(?:最小权限|最小特权)/)
+  assert.match(security, /生产[^\n]*(?:边界|环境)/)
+  assert.match(security, /(?:轮换|吊销)/)
+})
+
 test('backend coverage uses a measured aggregate line baseline', async () => {
   const pom = await repositoryFile('pom.xml')
   const coveragePom = await repositoryFile('opc-coverage/pom.xml')

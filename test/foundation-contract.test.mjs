@@ -243,6 +243,12 @@ test('README and security policy expose governance entry points and production b
   assert.match(security, /(?:轮换|吊销)/)
 })
 
+test('governance findings record the observed local Node version deviation', async () => {
+  const findings = await repositoryFile('findings.md')
+
+  assert.match(findings, /(?:实际观测|实际检测|本机)[^\n]*v22\.21\.0[^\n]*24\.15\.0/)
+})
+
 test('backend coverage uses a measured aggregate line baseline', async () => {
   const pom = await repositoryFile('pom.xml')
   const coveragePom = await repositoryFile('opc-coverage/pom.xml')

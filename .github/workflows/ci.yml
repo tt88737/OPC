@@ -42,3 +42,10 @@ jobs:
       - name: Verify foundation
         shell: powershell
         run: ./bin/verify-foundation.ps1
+
+      - name: Upload aggregate JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-aggregate-report
+          path: opc-admin/target/site/jacoco-aggregate

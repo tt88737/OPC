@@ -35,6 +35,9 @@
         <velocity.version>2.4.1</velocity.version>
         <swagger-ui.version>5.34.1</swagger-ui.version>
         <mysql.version>26.10.0</mysql.version>
+        <jacoco.version>0.8.14</jacoco.version>
+        <!-- Measured aggregate LINE coverage: 149/2866 = 0.0519; keep a 0.0500 baseline. -->
+        <jacoco.minimum.line.ratio>0.05</jacoco.minimum.line.ratio>
     </properties>
 
     <!-- 依赖声明 -->
@@ -223,6 +226,34 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>aggregate-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <includeCurrentProject>true</includeCurrentProject>
+                            <formats>
+                                <format>HTML</format>
+                                <format>XML</format>
+                            </formats>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>

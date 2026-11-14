@@ -46,7 +46,10 @@ try {
         Pop-Location
     }
 
-    Invoke-FoundationStage 'mvnw.cmd clean test' { & (Join-Path $repoRoot 'mvnw.cmd') clean test }
+    Invoke-FoundationStage 'mvnw.cmd clean verify' { & (Join-Path $repoRoot 'mvnw.cmd') clean verify }
+    Invoke-FoundationStage 'verify-aggregate-coverage.ps1' {
+        & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-aggregate-coverage.ps1')
+    }
 
     Push-Location (Join-Path $repoRoot 'frontend')
     try {

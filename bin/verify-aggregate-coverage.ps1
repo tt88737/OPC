@@ -1,0 +1,69 @@
+param(
+    [string] $ReportPath,
+    [string] $PomPath
+)
+
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if (-not $ReportPath) {
+    $ReportPath = Join-Path $repoRoot 'opc-admin/target/site/jacoco-aggregate/jacoco.xml'
+}
+if (-not $PomPath) {
+    $PomPath = Join-Path $repoRoot 'pom.xml'
+}
+
+function Fail-CoverageVerification {
+    param([string] $Message)
+
+    [Console]::Error.WriteLine("Aggregate coverage verification failed: $Message")
+    exit 1
+}
+
+if (-not (Test-Path -LiteralPath $ReportPath -PathType Leaf)) {
+    Fail-CoverageVerification "report not found at $ReportPath"
+}
+if (-not (Test-Path -LiteralPath $PomPath -PathType Leaf)) {
+    Fail-CoverageVerification "POM not found at $PomPath"
+}
+
+[xml] $pom = [IO.File]::ReadAllText($PomPath, [Text.Encoding]::UTF8)
+[xml] $report = [IO.File]::ReadAllText($ReportPath, [Text.Encoding]::UTF8)
+$thresholdText = $pom.project.properties.'jacoco.minimum.line.ratio'
+$threshold = [decimal] 0
+if (-not [decimal]::TryParse(
+    $thresholdText,
+    [Globalization.NumberStyles]::Number,
+    [Globalization.CultureInfo]::InvariantCulture,
+    [ref] $threshold
+)) {
+    Fail-CoverageVerification 'jacoco.minimum.line.ratio must be a decimal POM property'
+}
+
+$lineCounter = @($report.report.counter | Where-Object { $_.type -eq 'LINE' })
+$instructionCounter = @($report.report.counter | Where-Object { $_.type -eq 'INSTRUCTION' })
+if ($lineCounter.Count -ne 1 -or $instructionCounter.Count -ne 1) {
+    Fail-CoverageVerification 'aggregate report must contain total LINE and INSTRUCTION counters'
+}
+
+$lineMissed = [long] $lineCounter[0].missed
+$lineCovered = [long] $lineCounter[0].covered
+$instructionTotal = [long] $instructionCounter[0].missed + [long] $instructionCounter[0].covered
+$lineTotal = $lineMissed + $lineCovered
+if ($lineTotal -le 0 -or $instructionTotal -le 0) {
+    Fail-CoverageVerification 'aggregate report is empty'
+}
+
+$groups = @($report.report.group)
+$packages = @($report.report.group.package)
+if ($groups.Count -lt 2 -or $packages.Count -lt 2) {
+    Fail-CoverageVerification 'aggregate report must contain multiple modules and business packages'
+}
+
+$ratio = [decimal] $lineCovered / [decimal] $lineTotal
+$percentage = ($ratio * [decimal] 100).ToString('0.00', [Globalization.CultureInfo]::InvariantCulture)
+$thresholdPercentage = ($threshold * [decimal] 100).ToString('0.00', [Globalization.CultureInfo]::InvariantCulture)
+if ($ratio -lt $threshold) {
+    Fail-CoverageVerification "LINE coverage $percentage% is below the $thresholdPercentage% baseline"
+}
+
+Write-Host "Aggregate LINE coverage: $percentage% (baseline: $thresholdPercentage%; $lineCovered/$lineTotal lines; $($groups.Count) modules)."

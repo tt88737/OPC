@@ -68,7 +68,7 @@ test('Java and frontend quality gates run before tests and builds', async () => 
     'mvnw.cmd checkstyle:check',
     'npm run lint',
     'npm run format:check',
-    'mvnw.cmd clean test',
+    'mvnw.cmd clean verify',
     'foundation contract tests',
     'npm test',
     'npm run build:prod'
@@ -184,7 +184,87 @@ test('repository pins Maven wrapper and documents wrapper builds', async () => {
   assert.match(await repositoryFile('mvnw'), /Maven Wrapper/)
   assert.match(await repositoryFile('mvnw.cmd'), /Maven Wrapper/)
   assert.match(readme, /mvnw(?:\.cmd)?\s+(?:clean\s+)?(?:test|package|verify)/)
-  assert.match(verifier, /mvnw\.cmd\s+clean\s+test/)
+  assert.match(verifier, /mvnw\.cmd\s+clean\s+verify/)
+})
+
+test('backend coverage uses a measured aggregate line baseline', async () => {
+  const pom = await repositoryFile('pom.xml')
+  const verifier = await repositoryFile('bin/verify-foundation.ps1')
+
+  assert.match(pom, /<jacoco\.version>\d+\.\d+\.\d+<\/jacoco\.version>/)
+  const minimum = pom.match(/<jacoco\.minimum\.line\.ratio>(0\.\d+)<\/jacoco\.minimum\.line\.ratio>/)
+  assert.ok(minimum, 'the aggregate LINE threshold must be a POM property')
+  assert.ok(Number(minimum[1]) > 0 && Number(minimum[1]) < 1)
+  assert.match(pom, /<artifactId>jacoco-maven-plugin<\/artifactId>/)
+  assert.match(pom, /<goal>prepare-agent<\/goal>/)
+  assert.match(pom, /<goal>report-aggregate<\/goal>/)
+  assert.match(pom, /<includeCurrentProject>true<\/includeCurrentProject>/)
+  assert.match(pom, /<formats>[\s\S]*<format>HTML<\/format>[\s\S]*<format>XML<\/format>[\s\S]*<\/formats>/)
+  assert.match(verifier, /mvnw\.cmd['"]?\)?\s+clean\s+verify/)
+  assert.match(verifier, /verify-aggregate-coverage\.ps1/)
+})
+
+test('CI always uploads the real aggregate JaCoCo report with a pinned action', async () => {
+  const workflow = await repositoryFile('.github/workflows/ci.yml')
+  const document = await repositoryYaml('.github/workflows/ci.yml')
+  const upload = document.jobs.verify.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'))
+
+  assert.ok(upload, 'CI must upload the aggregate coverage report')
+  assert.equal(upload.if, 'always()')
+  assert.equal(upload.uses, `actions/upload-artifact@${PINNED_ACTIONS['actions/upload-artifact'].sha}`)
+  assert.equal(upload.with.name, 'jacoco-aggregate-report')
+  assert.equal(upload.with.path, 'opc-admin/target/site/jacoco-aggregate')
+  assert.match(workflow, new RegExp(`uses:\\s*actions/upload-artifact@${PINNED_ACTIONS['actions/upload-artifact'].sha}\\s+# ${PINNED_ACTIONS['actions/upload-artifact'].version}`))
+})
+
+async function runAggregateCoverageFixture({ missed, covered, groups = 2 }) {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), 'opc-aggregate-coverage-'))
+  const pomPath = join(fixtureRoot, 'pom.xml')
+  const reportPath = join(fixtureRoot, 'jacoco.xml')
+  const groupXml = Array.from({ length: groups }, (_, index) =>
+    `<group name="module-${index}"><package name="com/opc/module${index}" /></group>`
+  ).join('')
+  await writeFile(pomPath, [
+    '<project xmlns="http://maven.apache.org/POM/4.0.0">',
+    '<properties><jacoco.minimum.line.ratio>0.20</jacoco.minimum.line.ratio></properties>',
+    '</project>'
+  ].join(''), 'utf8')
+  await writeFile(reportPath, [
+    '<report name="aggregate">', groupXml,
+    `<counter type="INSTRUCTION" missed="${missed}" covered="${covered}" />`,
+    `<counter type="LINE" missed="${missed}" covered="${covered}" />`,
+    '</report>'
+  ].join(''), 'utf8')
+
+  const result = spawnSync(powerShellExecutable, [
+    '-NoProfile', '-ExecutionPolicy', 'Bypass',
+    '-File', fileURLToPath(new URL('../bin/verify-aggregate-coverage.ps1', import.meta.url)),
+    '-ReportPath', reportPath,
+    '-PomPath', pomPath
+  ], { encoding: 'utf8' })
+  await rm(fixtureRoot, { recursive: true, force: true })
+  return result
+}
+
+test('aggregate coverage verifier accepts a populated multi-module report above the POM baseline', async () => {
+  const result = await runAggregateCoverageFixture({ missed: 70, covered: 30 })
+
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+  assert.match(result.stdout, /30\.00%/)
+  assert.match(result.stdout, /20\.00%/)
+})
+
+test('aggregate coverage verifier rejects empty or below-baseline reports', async () => {
+  const empty = await runAggregateCoverageFixture({ missed: 0, covered: 0 })
+  const belowBaseline = await runAggregateCoverageFixture({ missed: 90, covered: 10 })
+  const singleModule = await runAggregateCoverageFixture({ missed: 70, covered: 30, groups: 1 })
+
+  assert.notEqual(empty.status, 0)
+  assert.match(empty.stderr + empty.stdout, /empty/i)
+  assert.notEqual(belowBaseline.status, 0)
+  assert.match(belowBaseline.stderr + belowBaseline.stdout, /below/i)
+  assert.notEqual(singleModule.status, 0)
+  assert.match(singleModule.stderr + singleModule.stdout, /multiple modules/i)
 })
 
 test('foundation verifier propagates a failing child exit code', async () => {

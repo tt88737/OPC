@@ -50,6 +50,8 @@ services:
       OPC_DB_URL: jdbc:mysql://mysql:3306/opc?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8
       OPC_DB_USERNAME: opc
       OPC_DB_PASSWORD: ${OPC_DB_PASSWORD:?Set OPC_DB_PASSWORD in .env}
+      OPC_REDIS_HOST: redis
+      OPC_REDIS_PORT: 6379
       OPC_REDIS_PASSWORD: ${OPC_REDIS_PASSWORD:?Set OPC_REDIS_PASSWORD in .env}
       OPC_TOKEN_SECRET: ${OPC_TOKEN_SECRET:?Set OPC_TOKEN_SECRET in .env}
       OPC_CORS_ALLOWED_ORIGINS: http://127.0.0.1:${OPC_HTTP_PORT:-8088},http://localhost:${OPC_HTTP_PORT:-8088}

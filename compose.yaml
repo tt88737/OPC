@@ -1,0 +1,97 @@
+name: opc-local
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: opc
+      MYSQL_USER: opc
+      MYSQL_PASSWORD: ${OPC_DB_PASSWORD:?Set OPC_DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${OPC_MYSQL_ROOT_PASSWORD:?Set OPC_MYSQL_ROOT_PASSWORD in .env}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/opc_20260417.sql:/docker-entrypoint-initdb.d/10-opc.sql:ro
+      - ./sql/quartz.sql:/docker-entrypoint-initdb.d/20-quartz.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [backend]
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${OPC_REDIS_PASSWORD:?Set OPC_REDIS_PASSWORD in .env}"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$OPC_REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    environment:
+      OPC_REDIS_PASSWORD: ${OPC_REDIS_PASSWORD:?Set OPC_REDIS_PASSWORD in .env}
+    networks: [backend]
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      OPC_PROFILE: prod
+      OPC_DB_URL: jdbc:mysql://mysql:3306/opc?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8
+      OPC_DB_USERNAME: opc
+      OPC_DB_PASSWORD: ${OPC_DB_PASSWORD:?Set OPC_DB_PASSWORD in .env}
+      OPC_REDIS_PASSWORD: ${OPC_REDIS_PASSWORD:?Set OPC_REDIS_PASSWORD in .env}
+      OPC_TOKEN_SECRET: ${OPC_TOKEN_SECRET:?Set OPC_TOKEN_SECRET in .env}
+      OPC_CORS_ALLOWED_ORIGINS: http://127.0.0.1:${OPC_HTTP_PORT:-8088},http://localhost:${OPC_HTTP_PORT:-8088}
+      OPC_BOOTSTRAP_ADMIN_PASSWORD: ${OPC_BOOTSTRAP_ADMIN_PASSWORD:-}
+      OPC_LOG_PATH: /app/logs
+      OPC_UPLOAD_PATH: /app/upload
+    volumes:
+      - backend-logs:/app/logs
+      - backend-upload:/app/upload
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks: [backend, edge]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OPC_HTTP_PORT:-8088}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [edge]
+
+networks:
+  backend:
+    internal: true
+  edge:
+
+volumes:
+  mysql-data:
+  redis-data:
+  backend-logs:
+  backend-upload:
+

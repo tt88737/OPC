@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.m2
+.runtime
+.worktrees
+worktrees
+**/target
+frontend/node_modules
+frontend/dist
+*.log
+.env
+opc-local.env.ps1
+dependency-tree*.txt
+

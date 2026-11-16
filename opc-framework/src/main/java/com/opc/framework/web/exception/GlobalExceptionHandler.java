@@ -16,6 +16,7 @@ import com.opc.common.core.domain.AjaxResult;
 import com.opc.common.core.text.Convert;
 import com.opc.common.exception.DemoModeException;
 import com.opc.common.exception.ServiceException;
+import com.opc.common.exception.base.BaseException;
 import com.opc.common.utils.StringUtils;
 import com.opc.common.utils.html.EscapeUtil;
 
@@ -36,7 +37,7 @@ public class GlobalExceptionHandler
     public AjaxResult handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request)
     {
         String requestURI = request.getRequestURI();
-        log.error("请求地址'{}',权限校验失败'{}'", requestURI, e.getMessage());
+        log.warn("请求地址'{}',权限校验失败'{}'", requestURI, e.getMessage());
         return AjaxResult.error(HttpStatus.FORBIDDEN, "没有权限，请联系管理员授权");
     }
 
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler
             HttpServletRequest request)
     {
         String requestURI = request.getRequestURI();
-        log.error("请求地址'{}',不支持'{}'请求", requestURI, e.getMethod());
+        log.warn("请求地址'{}',不支持'{}'请求", requestURI, e.getMethod());
         return AjaxResult.error(e.getMessage());
     }
 
@@ -58,9 +59,20 @@ public class GlobalExceptionHandler
     @ExceptionHandler(ServiceException.class)
     public AjaxResult handleServiceException(ServiceException e, HttpServletRequest request)
     {
-        log.error(e.getMessage(), e);
+        log.warn("业务请求处理失败: path='{}', message='{}'", request.getRequestURI(), e.getMessage());
         Integer code = e.getCode();
         return StringUtils.isNotNull(code) ? AjaxResult.error(code, e.getMessage()) : AjaxResult.error(e.getMessage());
+    }
+
+    /**
+     * 用户输入、验证码等可预期业务异常
+     */
+    @ExceptionHandler(BaseException.class)
+    public AjaxResult handleBaseException(BaseException e, HttpServletRequest request)
+    {
+        String message = e.getMessage();
+        log.info("业务请求被拒绝: path='{}', message='{}'", request.getRequestURI(), message);
+        return AjaxResult.error(message);
     }
 
     /**
@@ -70,7 +82,7 @@ public class GlobalExceptionHandler
     public AjaxResult handleMissingPathVariableException(MissingPathVariableException e, HttpServletRequest request)
     {
         String requestURI = request.getRequestURI();
-        log.error("请求路径中缺少必需的路径变量'{}',发生系统异常.", requestURI, e);
+        log.warn("请求路径中缺少必需的路径变量: path='{}', variable='{}'", requestURI, e.getVariableName());
         return AjaxResult.error(String.format("请求路径中缺少必需的路径变量[%s]", e.getVariableName()));
     }
 
@@ -86,7 +98,7 @@ public class GlobalExceptionHandler
         {
             value = EscapeUtil.clean(value);
         }
-        log.error("请求参数类型不匹配'{}',发生系统异常.", requestURI, e);
+        log.warn("请求参数类型不匹配: path='{}', parameter='{}'", requestURI, e.getName());
         return AjaxResult.error(String.format("请求参数类型不匹配，参数[%s]要求类型为：'%s'，但输入值为：'%s'", e.getName(), e.getRequiredType().getName(), value));
     }
 
@@ -98,7 +110,7 @@ public class GlobalExceptionHandler
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生未知异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        return AjaxResult.error("系统繁忙，请稍后重试");
     }
 
     /**
@@ -109,7 +121,7 @@ public class GlobalExceptionHandler
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生系统异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        return AjaxResult.error("系统繁忙，请稍后重试");
     }
 
     /**
@@ -118,8 +130,8 @@ public class GlobalExceptionHandler
     @ExceptionHandler(BindException.class)
     public AjaxResult handleBindException(BindException e)
     {
-        log.error(e.getMessage(), e);
         String message = e.getAllErrors().get(0).getDefaultMessage();
+        log.warn("请求参数校验失败: message='{}'", message);
         return AjaxResult.error(message);
     }
 
@@ -129,8 +141,8 @@ public class GlobalExceptionHandler
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException e)
     {
-        log.error(e.getMessage(), e);
         String message = e.getBindingResult().getFieldError().getDefaultMessage();
+        log.warn("请求参数校验失败: message='{}'", message);
         return AjaxResult.error(message);
     }
 

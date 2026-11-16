@@ -40,6 +40,7 @@ nbdist/
 # Others
 *.log
 opc-local.env.ps1
+/.env
 *.xml.versionsBackup
 *.swp
 

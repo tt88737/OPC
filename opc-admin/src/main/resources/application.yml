@@ -7,7 +7,7 @@ opc:
   # 版权年份
   copyrightYear: 2026
   # 文件路径 示例（Windows 配置 D:/opc/uploadPath，Linux 配置 /home/opc/uploadPath）
-  profile: D:/opc/uploadPath
+  profile: ${OPC_UPLOAD_PATH:D:/opc/uploadPath}
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
@@ -34,8 +34,11 @@ server:
 # 日志配置
 logging:
   level:
-    com.opc: debug
+    root: info
+    com.opc: info
     org.springframework: warn
+    org.mybatis: warn
+    com.baomidou.mybatisplus: warn
 
 # 用户配置
 user:
@@ -51,6 +54,7 @@ spring:
   messages:
     # 国际化资源文件路径
     basename: i18n/messages
+    encoding: UTF-8
   profiles:
     active: ${OPC_PROFILE:dev}
     group:

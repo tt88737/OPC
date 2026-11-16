@@ -62,6 +62,7 @@ public class SysNoticeController extends BaseController
     /**
      * 根据通知公告编号获取详细信息
      */
+    @PreAuthorize("@ss.hasPermi('system:notice:query')")
     @Operation(summary = "获取通知公告详细信息")
     @GetMapping(value = "/{noticeId}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
@@ -101,6 +102,7 @@ public class SysNoticeController extends BaseController
     /**
      * 首页顶部公告列表（返回全部正常公告，带当前用户已读标记，最多5条）
      */
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "查询顶部通知公告")
     @GetMapping("/listTop")
     @ResponseBody
@@ -118,6 +120,8 @@ public class SysNoticeController extends BaseController
     /**
      * 标记公告已读
      */
+    @PreAuthorize("isAuthenticated()")
+    @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @Operation(summary = "标记通知公告已读")
     @PostMapping("/markRead")
     @ResponseBody
@@ -132,6 +136,8 @@ public class SysNoticeController extends BaseController
     /**
      * 批量标记已读
      */
+    @PreAuthorize("isAuthenticated()")
+    @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @Operation(summary = "批量标记通知公告已读")
     @PostMapping("/markReadAll")
     @ResponseBody

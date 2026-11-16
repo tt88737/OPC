@@ -37,6 +37,7 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
     'verify-foundation-clean.ps1',
     'verify-security-profiles.ps1',
     'verify-swagger-annotations.ps1',
+    'verify-api-contracts.ps1',
     'mvn',
     'npm ci',
     'npm test',
@@ -54,6 +55,7 @@ test('foundation verifier runs required fail-fast stages in order', async () => 
   assert.match(script, /\$LASTEXITCODE/)
   assert.match(script, /exit\s+\$stageExitCode/)
   assert.match(repositoryVerifier, /['"]bin\/verify-version-consistency\.ps1['"]/)
+  assert.match(repositoryVerifier, /['"]bin\/verify-api-contracts\.ps1['"]|verify-api-contracts\.ps1/)
 })
 
 test('Java and frontend quality gates run before tests and builds', async () => {

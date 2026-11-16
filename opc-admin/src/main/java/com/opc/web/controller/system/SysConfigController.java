@@ -82,6 +82,7 @@ public class SysConfigController extends BaseController
     /**
      * 根据参数键名查询参数值
      */
+    @PreAuthorize("@ss.hasPermi('system:config:query')")
     @Operation(summary = "根据参数键名查询参数值")
     @GetMapping(value = "/configKey/{configKey}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))

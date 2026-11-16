@@ -78,6 +78,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
 - 后端、前端、测试与完成定义见 [代码规范契约](docs/engineering/code-contract.md)。
 - 团队分工、风险分级和审查要求见 [团队协作契约](docs/engineering/collaboration-contract.md)。
 - 使用 Codex 进行需求、实施、验证和交付见 [Codex 协助开发工作流](docs/engineering/codex-workflow.md)。
+- 一人公司角色、决策权、资源优先级和风险授权见 [一人公司运营与工程契约](docs/engineering/solo-company-operating-contract.md)。
+- 从需求澄清到发布观察的状态和证据要求见 [从需求到落地工作流](docs/engineering/requirements-to-delivery-workflow.md)。
+- 新功能开发前后的 API、权限、审计、数据和验证检查见 [新功能契约清单](docs/engineering/feature-contract-checklist.md)。
 - C/B 端、服务端和模块拆分边界见 [平台架构契约](docs/engineering/platform-architecture-contract.md)。
 - 接口、数据所有权和数据库演进见 [API 与数据契约](docs/engineering/api-data-contract.md)。
 - Docker、环境晋级和发布要求见 [部署与容器契约](docs/engineering/deployment-container-contract.md)。

@@ -69,6 +69,7 @@ public class SysMenuController extends BaseController
     /**
      * 获取菜单下拉树列表
      */
+    @PreAuthorize("@ss.hasPermi('system:menu:list')")
     @Operation(summary = "获取菜单下拉树")
     @GetMapping("/treeselect")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
@@ -81,6 +82,7 @@ public class SysMenuController extends BaseController
     /**
      * 加载对应角色菜单列表树
      */
+    @PreAuthorize("@ss.hasPermi('system:menu:list')")
     @Operation(summary = "获取角色菜单树")
     @GetMapping(value = "/roleMenuTreeselect/{roleId}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))

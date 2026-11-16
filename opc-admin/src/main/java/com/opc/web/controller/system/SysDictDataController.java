@@ -85,6 +85,7 @@ public class SysDictDataController extends BaseController
     /**
      * 根据字典类型查询字典数据信息
      */
+    @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @Operation(summary = "根据字典类型查询数据")
     @GetMapping(value = "/type/{dictType}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))

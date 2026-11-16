@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -53,6 +54,7 @@ public class SysProfileController extends BaseController
     /**
      * 个人信息
      */
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "获取个人信息")
     @GetMapping
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
@@ -69,6 +71,7 @@ public class SysProfileController extends BaseController
     /**
      * 修改用户
      */
+    @PreAuthorize("isAuthenticated()")
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人信息")
     @PutMapping
@@ -101,6 +104,7 @@ public class SysProfileController extends BaseController
     /**
      * 重置密码
      */
+    @PreAuthorize("isAuthenticated()")
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @Operation(summary = "修改个人密码")
     @PutMapping("/updatePwd")
@@ -140,6 +144,7 @@ public class SysProfileController extends BaseController
     /**
      * 头像上传
      */
+    @PreAuthorize("isAuthenticated()")
     @Log(title = "用户头像", businessType = BusinessType.UPDATE)
     @Operation(summary = "上传用户头像", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户头像文件", required = true, content = @Content(mediaType = "multipart/form-data")))
     @PostMapping("/avatar")

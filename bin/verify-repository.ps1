@@ -10,6 +10,7 @@ try {
         'frontend/test/passwordPolicy.test.js'
         'test/foundation-contract.test.mjs'
         'bin/verify-foundation.ps1'
+        'bin/verify-api-contracts.ps1'
         'bin/verify-version-consistency.ps1'
         '.mvn/wrapper/maven-wrapper.properties'
         'mvnw'

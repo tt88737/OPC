@@ -7,6 +7,9 @@
 | [代码规范契约](code-contract.md) | Java、Vue、测试、日志和安全编码标准 |
 | [团队协作契约](collaboration-contract.md) | 分支、风险、评审、交接与例外 |
 | [Codex 协助开发工作流](codex-workflow.md) | AI 参与需求、实施、验证与交付的边界 |
+| [一人公司运营与工程契约](solo-company-operating-contract.md) | 单人角色、决策权、资源优先级与风险授权 |
+| [从需求到落地工作流](requirements-to-delivery-workflow.md) | 需求状态、Codex 执行协议和交付证据 |
+| [新功能契约清单](feature-contract-checklist.md) | API、权限、审计、数据、验证和发布逐项检查 |
 | [平台架构契约](platform-architecture-contract.md) | C 端、B 端、服务端、模块和依赖边界 |
 | [API 与数据契约](api-data-contract.md) | 接口生命周期、数据所有权、迁移与隐私 |
 | [部署与容器契约](deployment-container-contract.md) | 构建产物、Docker、配置、发布和回滚 |

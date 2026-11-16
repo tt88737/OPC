@@ -10,6 +10,7 @@ FROM nginx:1.28-alpine AS runtime
 
 RUN rm /etc/nginx/conf.d/default.conf \
     && mkdir -p /var/cache/nginx /var/run /tmp/nginx \
+    && sed -i 's#^pid .*;#pid /tmp/nginx/nginx.pid;#' /etc/nginx/nginx.conf \
     && chown -R nginx:nginx /var/cache/nginx /var/run /tmp/nginx /etc/nginx/conf.d
 
 COPY --from=build /workspace/dist /usr/share/nginx/html
@@ -17,8 +18,6 @@ COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 USER nginx
 EXPOSE 8080
-
-CMD ["nginx", "-g", "daemon off; pid /tmp/nginx/nginx.pid;"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

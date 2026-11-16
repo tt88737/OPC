@@ -139,6 +139,7 @@ public class SysPostController extends BaseController
     /**
      * 获取岗位选择框列表
      */
+    @PreAuthorize("@ss.hasPermi('system:post:query')")
     @Operation(summary = "获取岗位选择列表")
     @GetMapping("/optionselect")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))

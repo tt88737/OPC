@@ -23,8 +23,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.opc.common.annotation.Log;
 import com.opc.common.constant.CacheConstants;
 import com.opc.common.core.domain.AjaxResult;
+import com.opc.common.enums.BusinessType;
 import com.opc.common.utils.StringUtils;
 import com.opc.system.domain.SysCache;
 
@@ -111,6 +113,7 @@ public class CacheController
     }
 
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
+    @Log(title = "缓存监控", businessType = BusinessType.CLEAN)
     @Operation(summary = "清理指定缓存名称")
     @DeleteMapping("/clearCacheName/{cacheName}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
@@ -122,6 +125,7 @@ public class CacheController
     }
 
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
+    @Log(title = "缓存监控", businessType = BusinessType.CLEAN)
     @Operation(summary = "清理指定缓存键名")
     @DeleteMapping("/clearCacheKey/{cacheKey}")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
@@ -132,6 +136,7 @@ public class CacheController
     }
 
     @PreAuthorize("@ss.hasPermi('monitor:cache:list')")
+    @Log(title = "缓存监控", businessType = BusinessType.CLEAN)
     @Operation(summary = "清空全部缓存")
     @DeleteMapping("/clearCacheAll")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))

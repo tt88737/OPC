@@ -39,6 +39,12 @@ OPC/
 
 5. 启动 `opc-admin/target/opc-admin.jar`，默认端口为 `8080`。
 
+Windows 本地开发建议使用标准启动脚本。它会加载被 Git 忽略的 `opc-local.env.ps1`，并统一设置 UTF-8 控制台编码，避免中文日志乱码：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\start-backend-local.ps1
+```
+
 ### 生产部署
 
 生产环境必须设置 `OPC_PROFILE=prod`，并显式提供 `OPC_DB_URL`、`OPC_DB_USERNAME`、`OPC_DB_PASSWORD`、`OPC_REDIS_PASSWORD`、`OPC_TOKEN_SECRET` 和 `OPC_CORS_ALLOWED_ORIGINS`。`prod` profile 固定关闭 Swagger/OpenAPI、Druid Web 控制台和 DevTools，不能通过 `OPC_SPRINGDOC_ENABLED`、`OPC_DRUID_ENABLED` 或 `OPC_DEVTOOLS_ENABLED` 重新开启。
@@ -67,7 +73,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\verify-foundation.ps1
 
 ## 工程协作
 
+- 所有研发、架构、数据、部署和运行规则统一从 [工程契约索引](docs/engineering/README.md) 进入。
 - 贡献流程、分支、提交和 PR 要求见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 后端、前端、测试与完成定义见 [代码规范契约](docs/engineering/code-contract.md)。
+- 团队分工、风险分级和审查要求见 [团队协作契约](docs/engineering/collaboration-contract.md)。
+- 使用 Codex 进行需求、实施、验证和交付见 [Codex 协助开发工作流](docs/engineering/codex-workflow.md)。
+- 一人公司角色、决策权、资源优先级和风险授权见 [一人公司运营与工程契约](docs/engineering/solo-company-operating-contract.md)。
+- 从需求澄清到发布观察的状态和证据要求见 [从需求到落地工作流](docs/engineering/requirements-to-delivery-workflow.md)。
+- 新功能开发前后的 API、权限、审计、数据和验证检查见 [新功能契约清单](docs/engineering/feature-contract-checklist.md)。
+- C/B 端、服务端和模块拆分边界见 [平台架构契约](docs/engineering/platform-architecture-contract.md)。
+- 接口、数据所有权和数据库演进见 [API 与数据契约](docs/engineering/api-data-contract.md)。
+- Docker、环境晋级和发布要求见 [部署与容器契约](docs/engineering/deployment-container-contract.md)。
+- SLO、监控、容量和灾备要求见 [运行可靠性契约](docs/engineering/operations-reliability-contract.md)。
+- 契约自动化与平台能力的建设顺序见 [平台治理路线图](docs/engineering/governance-roadmap.md)。
 - 版本、上线检查、发布证据和回滚步骤见 [发布与回滚手册](docs/release-and-rollback.md)。
 
 ## 依赖安全扫描

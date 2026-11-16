@@ -37,6 +37,9 @@ try {
     Invoke-FoundationStage 'verify-swagger-annotations.ps1' {
         & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-swagger-annotations.ps1')
     }
+    Invoke-FoundationStage 'verify-api-contracts.ps1' {
+        & $powerShellExecutable -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify-api-contracts.ps1')
+    }
     Invoke-FoundationStage 'mvnw.cmd checkstyle:check' { & (Join-Path $repoRoot 'mvnw.cmd') checkstyle:check }
 
     Push-Location (Join-Path $repoRoot 'frontend')

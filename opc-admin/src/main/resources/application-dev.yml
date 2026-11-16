@@ -4,6 +4,7 @@ spring:
       enabled: ${OPC_DEVTOOLS_ENABLED:false}
   data:
     redis:
+      client-type: jedis
       password: ${OPC_REDIS_PASSWORD:}
   datasource:
     druid:

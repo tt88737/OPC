@@ -103,6 +103,7 @@ public class SysUserController extends BaseController
         return success(message);
     }
 
+    @PreAuthorize("@ss.hasPermi('system:user:import')")
     @Operation(summary = "下载用户导入模板")
     @PostMapping("/importTemplate")
     @ApiResponse(responseCode = "200", description = "文件下载成功", content = @Content(mediaType = "application/octet-stream"))

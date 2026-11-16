@@ -143,6 +143,7 @@ public class SysDictTypeController extends BaseController
     /**
      * 获取字典选择框列表
      */
+    @PreAuthorize("@ss.hasPermi('system:dict:query')")
     @Operation(summary = "获取字典类型选择列表")
     @GetMapping("/optionselect")
     @ApiResponse(responseCode = "200", description = "请求成功", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AjaxResult.class)))
